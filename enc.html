@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>encryptme: Encryption</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+	<script src="encryption.js"></script>
+	<h1>encryptme</h1>
+	<label for="msg">Message: </label>
+	<textarea id="msg" form="form"></textarea>
+	<label for="password">Password: </label>
+	<input id="password" type="password">
+	<button id="encrypt">Encrypt</button>
+	<textarea id="ciphertext"></textarea>
+	<script>
+		document.getElementById("encrypt").addEventListener("click", enc);
+	</script>
+  </body>
+</html>
