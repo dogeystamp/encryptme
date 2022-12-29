@@ -47,6 +47,10 @@ input:focus, textarea:focus {
 	border: 1px solid #444444aa;
 }
 
+textarea:disabled, input:disabled {
+	opacity: 40%;
+}
+
 p {
 	text-align: justify;
 }
