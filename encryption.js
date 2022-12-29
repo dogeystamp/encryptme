@@ -87,21 +87,24 @@ async function enc () {
 		msgEncoded
 	);
 
-	let output = concatBuf(concatBuf(ciphertext, salt), iv);
+	let output = {
+		"ciphertext": bufTo64(ciphertext),
+		"salt": bufTo64(salt),
+		"iv": bufTo64(iv)
+	}
 
-	outBox.innerHTML = `${bufTo64(output)}`;
-	let keyExp = await exportKey (key);
+	outBox.innerHTML = `${btoa(JSON.stringify(output))}`;
 }
 
 async function dec () {
 	outBox = document.getElementById("plaintext");
 	outBox.innerHTML = '';
 
-	let msgEncoded = b64ToBuf(getMsg());
+	let msgEncoded = JSON.parse(atob(getMsg()));
 
-	let ciphertext = new Uint8Array(msgEncoded.slice(0, -32));
-	let iv = new Uint8Array(msgEncoded.slice(-16));
-	let salt = new Uint8Array(msgEncoded.slice(-32, -16));
+	let ciphertext = new b64ToBuf(msgEncoded.ciphertext);
+	let iv = new Uint8Array(b64ToBuf(msgEncoded.iv));
+	let salt = new Uint8Array(b64ToBuf(msgEncoded.salt));
 
 	let keyMaterial = await getKeyMaterial();
 	let key = await getKey(keyMaterial, salt);
