@@ -8,7 +8,7 @@ function getMsgEncoding () {
 }
 
 function getKeyMaterial () {
-	let pass = document.getElementById("password");
+	let pass = document.getElementById("password").value;
 	let enc = new TextEncoder();
 	return window.crypto.subtle.importKey(
 		"raw",
@@ -91,7 +91,6 @@ async function enc () {
 
 	outBox.innerHTML = `${bufTo64(output)}`;
 	let keyExp = await exportKey (key);
-	window.alert(bufTo64(iv));
 }
 
 async function dec () {
@@ -120,6 +119,6 @@ async function dec () {
 		let dec = new TextDecoder();
 		outBox.innerHTML = `${dec.decode(plaintext)}`;
 	} catch (e) {
-		window.alert(e.name);
+		window.alert("Decryption error: incorrect password?");
 	}
 }
