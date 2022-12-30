@@ -20,6 +20,7 @@ let inp3 = new FormElement({
 	type: "textarea",
 	label: "Large text box",
 	enabled: true,
+	dataType: "b64",
 	form: form
 });
 
@@ -35,5 +36,14 @@ let out = new FormElement({
 	id: "output",
 	type: "output",
 	label: "Output box",
+	dataType: "b64",
+	form: form
+});
+
+let outAdvanced = new FormElement({
+	id: "output-advanced",
+	type: "output",
+	label: "Output box (advanced setting)",
+	advanced: true,
 	form: form
 });
