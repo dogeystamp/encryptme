@@ -1,4 +1,11 @@
 class Element {
+	constructor({id, tag}) {
+		this.id = id;
+		if (tag !== undefined) {
+			this.handle = tag;
+		}
+	}
+
 	#hidden = false;
 	get hidden() {
 		return this.#hidden;
@@ -10,21 +17,23 @@ class Element {
 		if (this.label !== undefined) {
 			this.label.hidden = this.hidden;
 		}
+
+		if (this.hidden === true) this.clearAlerts();
 	}
+
 }
 
 class Form extends Element {
-	constructor({id, formTag}) {
-		super();
-		this.id = id;
+	constructor({id, tag}) {
+		super(id, tag);
 
-		if (formTag !== undefined) {
-			this.handle = formTag;
-		} else {
+		if (tag === undefined) {
 			this.handle = document.createElement("div");
 		}
 
 		this.elements = new Map();
+
+		this.clearAlerts = this.clearAlerts.bind(this);
 	}
 
 	#advanced = false;
@@ -41,6 +50,12 @@ class Form extends Element {
 					element.hidden = true;
 				}
 			}
+		}
+	}
+
+	clearAlerts() {
+		for (const [id, element] of this.elements.entries()) {
+			element.clearAlerts();
 		}
 	}
 }
@@ -74,18 +89,14 @@ class FormElement extends Element {
 		this.handle.disabled = !this.#enabled;
 	}
 
-	constructor({id, type, form, label="", dataType="plaintext", advanced=false, enabled=true}) {
-		super();
+	constructor({id, type, form, tag, label="", dataType="plaintext", advanced=false, enabled=true}) {
+		super(id);
 		this.id = id;
 
 		this.advanced = advanced;
-
-		if (label !== "") {
-			this.label = document.createElement("label");
-			this.label.innerHTML = label;
-		}
-
 		this.type = type;
+
+		this.clearAlerts = this.clearAlerts.bind(this);
 
 		switch (type) {
 			case "textbox":
@@ -100,6 +111,8 @@ class FormElement extends Element {
 				break;
 			case "button":
 				this.handle = document.createElement("button");
+				this.handle.innerHTML = label;
+				label = "";
 				dataType = "none"
 				break;
 			case "output":
@@ -108,6 +121,11 @@ class FormElement extends Element {
 				break;
 			default:
 				throw `Unknown input type: ${type}`;
+		}
+
+		if (label !== "") {
+			this.label = document.createElement("label");
+			this.label.innerHTML = label;
 		}
 
 		this.dataType = dataType;
@@ -180,5 +198,52 @@ class FormElement extends Element {
 			case "b64":
 				this.handle.value = bufToB64(x);
 		}
+	}
+
+	alerts = [];
+	alertBox(type, message, title) {
+		// type is alert-error or alert-info
+		
+		if (this.handle === undefined) {
+			throw `can not add alert for '${this.id}': still undefined`;
+		}
+
+		if (this.hidden === true) {
+			throw `can not add alert for '${this.id}': hidden`;
+		}
+
+		if (title === undefined) {
+			switch (type) {
+				case "alert-info":
+					title = "Info: ";
+					break;
+				case "alert-error":
+					title = "Error: ";
+					break;
+				default:
+					title = "";
+					break;
+			}
+		}
+
+		let box = document.createElement("div");
+		box.classList.add(type);
+		box.classList.add("alert");
+		box.innerHTML = message;
+
+		if (title !== "") {
+			let titleTag = document.createElement("strong");
+			titleTag.innerHTML = title;
+			box.prepend(titleTag);
+		}
+
+		this.handle.after(box);
+		this.alerts.push(box);
+	}
+	clearAlerts() {
+		for (const box of this.alerts) {
+			box.remove();
+		}
+		this.alerts = [];
 	}
 }
