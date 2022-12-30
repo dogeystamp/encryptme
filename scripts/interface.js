@@ -1,5 +1,21 @@
-class Form {
+class Element {
+	#hidden = false;
+	get hidden() {
+		return this.#hidden;
+	}
+	set hidden(x) {
+		this.#hidden = x;
+
+		this.handle.hidden = this.hidden;
+		if (this.label !== undefined) {
+			this.label.hidden = this.hidden;
+		}
+	}
+}
+
+class Form extends Element {
 	constructor({id, formTag}) {
+		super();
 		this.id = id;
 
 		if (formTag !== undefined) {
@@ -48,7 +64,7 @@ function bufToB64 (buf) {
 	return btoa(ascii);
 }
 
-class FormElement {
+class FormElement extends Element {
 	#enabled = true;
 	get enabled() {
 		return this.#enabled;
@@ -58,20 +74,8 @@ class FormElement {
 		this.handle.disabled = !this.#enabled;
 	}
 
-	#hidden = true;
-	get hidden() {
-		return this.#hidden;
-	}
-	set hidden(x) {
-		this.#hidden = x;
-
-		this.handle.hidden = this.hidden;
-		if (this.label !== undefined) {
-			this.label.hidden = this.hidden;
-		}
-	}
-
 	constructor({id, type, form, label="", dataType="plaintext", advanced=false, enabled=true}) {
+		super();
 		this.id = id;
 
 		this.advanced = advanced;
@@ -160,8 +164,11 @@ class FormElement {
 			case "plaintext":
 				return this.handle.value;
 			case "b64":
-				// TODO: error handling
-				return b64ToBuf(this.handle.value);
+				try {
+					return b64ToBuf(this.handle.value);
+				} catch (e) {
+					// TODO
+				}
 			case "none":
 				return undefined;
 		}
