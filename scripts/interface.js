@@ -176,8 +176,8 @@ class FormElement extends InterfaceElement {
 		this.#dataType = x;
 	}
 	
-	#value;
 	get value() {
+		this.clearAlerts();
 		switch (this.dataType) {
 			case "plaintext":
 				return this.handle.value;
@@ -185,7 +185,8 @@ class FormElement extends InterfaceElement {
 				try {
 					return b64ToBuf(this.handle.value);
 				} catch (e) {
-					// TODO
+					this.alertBox("alert-error", "Invalid base64 value.");
+					return;
 				}
 			case "none":
 				return undefined;
