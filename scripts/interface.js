@@ -1,4 +1,4 @@
-class Element {
+class InterfaceElement {
 	constructor({id, tag}) {
 		this.id = id;
 		if (tag !== undefined) {
@@ -23,7 +23,7 @@ class Element {
 
 }
 
-class Form extends Element {
+class Form extends InterfaceElement {
 	constructor({id, tag}) {
 		super(id, tag);
 
@@ -79,7 +79,7 @@ function bufToB64 (buf) {
 	return btoa(ascii);
 }
 
-class FormElement extends Element {
+class FormElement extends InterfaceElement {
 	#enabled = true;
 	get enabled() {
 		return this.#enabled;
