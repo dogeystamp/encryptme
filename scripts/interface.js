@@ -111,7 +111,7 @@ class FormElement extends InterfaceElement {
 				break;
 			case "button":
 				this.handle = document.createElement("button");
-				this.handle.innerHTML = label;
+				this.handle.appendChild(document.createTextNode(label));
 				label = "";
 				dataType = "none"
 				break;
@@ -125,7 +125,7 @@ class FormElement extends InterfaceElement {
 
 		if (label !== "") {
 			this.label = document.createElement("label");
-			this.label.innerHTML = label;
+			this.label.appendChild(document.createTextNode(label));
 		}
 
 		this.dataType = dataType;
@@ -230,11 +230,11 @@ class FormElement extends InterfaceElement {
 		let box = document.createElement("div");
 		box.classList.add(type);
 		box.classList.add("alert");
-		box.innerHTML = message;
+		box.appendChild(document.createTextNode(message));
 
 		if (title !== "") {
 			let titleTag = document.createElement("strong");
-			titleTag.innerHTML = title;
+			titleTag.appendChild(document.createTextNode(title));
 			box.prepend(titleTag);
 		}
 

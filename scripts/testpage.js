@@ -40,6 +40,13 @@ let out = new FormElement({
 	form: form
 });
 
+let button = new FormElement({
+	id: "button",
+	type: "button",
+	label: "Do things",
+	form: form
+});
+
 let outAdvanced = new FormElement({
 	id: "output-advanced",
 	type: "output",
@@ -47,3 +54,6 @@ let outAdvanced = new FormElement({
 	advanced: true,
 	form: form
 });
+
+inp.alertBox("alert-info", "Pater noster qui es in caelo sanctificetur nomen tuum adveniat regnum tuum.");
+button.handle.addEventListener("click", form.clearAlerts);
