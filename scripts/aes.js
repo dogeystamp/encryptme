@@ -129,7 +129,7 @@ async function decrypt() {
 			ciphertext
 		);
 	} catch (e) {
-		window.alert("Decryption error: incorrect password?");
+		decPass.alertBox("alert-error", "Decryption error: incorrect password?");
 	}
 
 	let dec = new TextDecoder();
