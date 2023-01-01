@@ -25,7 +25,7 @@ class InterfaceElement {
 
 class Form extends InterfaceElement {
 	constructor({id, tag}) {
-		super(id, tag);
+		super({id, tag});
 
 		if (tag === undefined) {
 			this.handle = document.createElement("div");
@@ -90,7 +90,7 @@ class FormElement extends InterfaceElement {
 	}
 
 	constructor({id, type, form, tag, label="", dataType="plaintext", advanced=false, enabled=true}) {
-		super(id);
+		super({id});
 		this.id = id;
 
 		this.advanced = advanced;
@@ -150,6 +150,7 @@ class FormElement extends InterfaceElement {
 
 	// plaintext is string data
 	// b64 is raw ArrayBuffer data
+	// json-b64 is Object data
 	// or none, which gives undefined
 	#dataType = "none";
 	get dataType() {
@@ -163,6 +164,7 @@ class FormElement extends InterfaceElement {
 		switch (x) {
 			case "plaintext":
 			case "b64":
+			case "json-b64":
 				let valid = ["textbox", "password", "textarea", "output"];
 				if (!valid.includes(this.type)) err(this.type, x);
 				break;
@@ -188,6 +190,20 @@ class FormElement extends InterfaceElement {
 					this.alertBox("alert-error", "Invalid base64 value.");
 					return;
 				}
+			case "json-b64":
+				let jsonString;
+				try {
+					jsonString = atob(this.handle.value);
+				} catch (e) {
+					this.alertBox("alert-error", "Invalid base64 value.");
+					return;
+				}
+				try {
+					return JSON.parse(jsonString);
+				} catch (e) {
+					this.alertBox("alert-error", "Invalid JSON encoding.");
+					return;
+				}
 			case "none":
 				return undefined;
 		}
@@ -196,8 +212,13 @@ class FormElement extends InterfaceElement {
 		switch (this.dataType) {
 			case "plaintext":
 				this.handle.value = x;
+				break;
 			case "b64":
 				this.handle.value = bufToB64(x);
+				break;
+			case "json-b64":
+				this.handle.value = btoa(JSON.stringify(x));
+				break;
 		}
 	}
 
