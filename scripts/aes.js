@@ -77,9 +77,18 @@ async function encrypt() {
 async function decrypt() {
 	let msgEncoded = decMsg.value;
 
-	let ciphertext = new b64ToBuf(msgEncoded.ciphertext);
-	let iv = new Uint8Array(b64ToBuf(msgEncoded.iv));
-	let salt = new Uint8Array(b64ToBuf(msgEncoded.salt));
+	let ciphertext, iv, salt;
+	try {
+		ciphertext = new b64ToBuf(msgEncoded.ciphertext);
+		iv = new Uint8Array(b64ToBuf(msgEncoded.iv));
+		salt = new Uint8Array(b64ToBuf(msgEncoded.salt));
+	} catch (e) {
+		decMsg.alertBox("alert-error", "Invalid base64 value.");
+	}
+
+	if (ciphertext === undefined || iv === undefined || salt === undefined) {
+		return;
+	}
 
 	let keyMaterial = await getKeyMaterial(decPass.value);
 	let key = await getKey(keyMaterial, salt);
