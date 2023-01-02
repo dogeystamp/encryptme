@@ -97,6 +97,9 @@ button {
 	transition-duration: 0.05s;
 	border: 1px solid #44444444;
 }
+button:focus {
+	border: 1px solid #44444477;
+}
 button:hover {
 	border: 1px solid #444444aa;
 }
