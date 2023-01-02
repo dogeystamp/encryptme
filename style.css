@@ -54,6 +54,19 @@ textarea:disabled, input:disabled {
 	opacity: 40%;
 }
 
+.checkbox-container {
+	list-style: none;
+}
+.checkbox-container label {
+	display: inline;
+	margin-left: 0.5em;
+}
+.checkbox-container input {
+	display: inline;
+	height: 1em;
+	transform: scale(1.25);
+}
+
 .alert {
 	border-radius: 3px;
 	margin-top: 0.5em;

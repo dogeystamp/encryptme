@@ -1,5 +1,6 @@
 let encForm = new Form({id: "encryption", tag: document.getElementById("encryption")});
 
+let encAdv = encForm.createCheckBox({label: "Advanced settings"});
 let encMsg = encForm.createTextArea({label: "Message"});
 let encPass = encForm.createPasswordInput({label: "Password"});
 let encButton = encForm.createButton({label: "Encrypt"});

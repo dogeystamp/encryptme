@@ -93,9 +93,24 @@ class Form extends InterfaceElement {
 
 	createButton(params) {
 		params.tag = document.createElement("button");
-		params.tag.appendChild(document.createTextNode(params.label));
-		params.label = "";
+		params.labelTag = document.createTextNode(params.label);
+		params.tag.appendChild(params.labelTag);
 		dataTypeSupports(params, ["none"]);
+		return this.appendElement(new FormElement(params));
+	}
+
+	createCheckBox(params) {
+		params.fragment = new DocumentFragment();
+		params.tag = document.createElement("input");
+		params.tag.setAttribute("type", "checkbox");
+		params.labelTag = document.createElement("label");
+		params.labelTag.appendChild(document.createTextNode(params.label));
+		let li = document.createElement("li");
+		li.classList.add("checkbox-container");
+		params.fragment.appendChild(li);
+		li.appendChild(params.tag);
+		li.appendChild(params.labelTag);
+		dataTypeSupports(params, ["bool"]);
 		return this.appendElement(new FormElement(params));
 	}
 
@@ -119,7 +134,7 @@ function b64ToBuf (b64) {
 
 function bufToB64 (buf) {
 	let bytes = new Uint8Array(buf);
-	let ascii = ''
+	let ascii = '';
 	for (var i = 0; i < bytes.byteLength; i++) {
 		ascii += String.fromCharCode(bytes[i]);
 	}
@@ -136,29 +151,31 @@ class FormElement extends InterfaceElement {
 		this.handle.disabled = !this.#enabled;
 	}
 
-	constructor({form, tag, label="", dataType, advanced=false, enabled=true}) {
+	constructor({form, tag, labelTag, label="", fragment, dataType, advanced=false, enabled=true}) {
 		super({tag});
-
-		this.advanced = advanced;
 
 		this.clearAlerts = this.clearAlerts.bind(this);
 
-		if (label !== "") {
-			this.label = document.createElement("label");
-			this.label.appendChild(document.createTextNode(label));
-		}
-
 		this.dataType = dataType;
-
 		this.enabled = enabled;
+		this.advanced = advanced;
 
 		if (this.advanced === true) this.hidden = true;
 
-		this.fragment = new DocumentFragment();
-		if (this.label !== undefined) {
-			this.fragment.appendChild(this.label);
+		this.labelText = label;
+		if (labelTag === undefined) {
+			this.labelTag = document.createElement("label");
+			this.labelTag.appendChild(document.createTextNode(this.labelText));
 		}
-		this.fragment.appendChild(this.handle);
+		if (fragment === undefined) {
+			this.fragment = new DocumentFragment();
+			if (this.labelTag !== undefined) {
+				this.fragment.appendChild(this.labelTag);
+			}
+			this.fragment.appendChild(this.handle);
+		} else {
+			this.fragment = fragment;
+		}
 
 		if (this.advanced === true) this.hidden = !form.advanced;
 	}
@@ -189,6 +206,8 @@ class FormElement extends InterfaceElement {
 					this.alertBox("alert-error", "Invalid JSON encoding.");
 					return;
 				}
+			case "bool":
+				return this.handle.checked;
 			case "none":
 				return undefined;
 		}
@@ -203,6 +222,9 @@ class FormElement extends InterfaceElement {
 				break;
 			case "json-b64":
 				this.handle.value = btoa(JSON.stringify(x));
+				break;
+			case "bool":
+				this.handle.checked = x;
 				break;
 		}
 	}
