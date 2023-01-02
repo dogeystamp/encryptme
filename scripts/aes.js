@@ -1,56 +1,23 @@
 let encForm = new Form({id: "encryption", tag: document.getElementById("encryption")});
-let encMsg = new FormElement({
-	id: "msg",
-	type: "textarea",
-	label: "Message",
-	form: encForm
-});
-let encPass = new FormElement({
-	id: "password",
-	type: "password",
-	label: "Password",
-	form: encForm
-});
-let encButton = new FormElement({
-	id: "button",
-	type: "button",
-	label: "Encrypt",
-	form: encForm
-});
-let encOut = new FormElement({
-	id: "output",
-	type: "output",
+
+let encMsg = encForm.createTextArea({label: "Message"});
+let encPass = encForm.createPasswordInput({label: "Password"});
+let encButton = encForm.createButton({label: "Encrypt"});
+let encOut = encForm.createOutput({
 	label: "Output",
 	dataType: "json-b64",
-	form: encForm
 });
 
 let decForm = new Form({id: "decryption", tag: document.getElementById("decryption")});
-let decMsg = new FormElement({
-	id: "msg",
-	type: "textarea",
+
+let decMsg = decForm.createTextArea({
 	label: "Encrypted message",
 	dataType: "json-b64",
-	form: decForm
 });
-let decPass = new FormElement({
-	id: "password",
-	type: "password",
-	label: "Password",
-	form: decForm
-});
-let decButton = new FormElement({
-	id: "button",
-	type: "button",
-	label: "Decrypt",
-	form: decForm
-});
-let decOut = new FormElement({
-	id: "output",
-	type: "output",
-	label: "Output",
-	form: decForm
-});
+let decPass = decForm.createPasswordInput({label: "Password"});
+let decButton = decForm.createButton({label: "Decrypt"});
+let decOut = decForm.createOutput({label: "Output"});
+
 
 function getKeyMaterial(password) {
 	let enc = new TextEncoder();

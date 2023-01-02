@@ -1,6 +1,5 @@
 class InterfaceElement {
-	constructor({id, tag}) {
-		this.id = id;
+	constructor({tag}) {
 		if (tag !== undefined) {
 			this.handle = tag;
 		}
@@ -23,15 +22,24 @@ class InterfaceElement {
 
 }
 
+function dataTypeSupports(params, validTypes) {
+	if (params.dataType === undefined) {
+		params.dataType = validTypes[0];
+	}
+	if (!validTypes.includes(params.dataType)) {
+		throw `Element can not support '${params.dataType}' data type`;
+	}
+}
+
 class Form extends InterfaceElement {
-	constructor({id, tag}) {
-		super({id, tag});
+	constructor({tag}) {
+		super({tag});
 
 		if (tag === undefined) {
 			this.handle = document.createElement("div");
 		}
 
-		this.elements = new Map();
+		this.elements = [];
 
 		this.clearAlerts = this.clearAlerts.bind(this);
 	}
@@ -42,7 +50,7 @@ class Form extends InterfaceElement {
 	}
 	set advanced(x) {
 		this.#advanced = x;
-		for (const [id, element] of this.elements.entries()) {
+		for (const element of this.elements) {
 			if (element.advanced === true) {
 				if (this.advanced === true) {
 					element.hidden = false;
@@ -54,9 +62,48 @@ class Form extends InterfaceElement {
 	}
 
 	clearAlerts() {
-		for (const [id, element] of this.elements.entries()) {
+		for (const element of this.elements) {
 			element.clearAlerts();
 		}
+	}
+
+	appendElement(elem) {
+		this.handle.append(elem.fragment);
+		return elem;
+	}
+
+	createTextBox(params) {
+		params.tag = document.createElement("input");
+		dataTypeSupports(params, ["plaintext", "b64", "json-b64"]);
+		return this.appendElement(new FormElement(params));
+	}
+
+	createPasswordInput(params) {
+		params.tag = document.createElement("input");
+		params.tag.setAttribute("type", "password");
+		dataTypeSupports(params, ["plaintext"]);
+		return this.appendElement(new FormElement(params));
+	}
+
+	createTextArea(params) {
+		params.tag = document.createElement("textarea");
+		dataTypeSupports(params, ["plaintext", "b64", "json-b64"]);
+		return this.appendElement(new FormElement(params));
+	}
+
+	createButton(params) {
+		params.tag = document.createElement("button");
+		params.tag.appendChild(document.createTextNode(params.label));
+		params.label = "";
+		dataTypeSupports(params, ["none"]);
+		return this.appendElement(new FormElement(params));
+	}
+
+	createOutput(params) {
+		params.tag = document.createElement("textarea");
+		params.tag.setAttribute("readonly", true);
+		dataTypeSupports(params, ["plaintext", "b64", "json-b64"]);
+		return this.appendElement(new FormElement(params));
 	}
 }
 
@@ -89,39 +136,12 @@ class FormElement extends InterfaceElement {
 		this.handle.disabled = !this.#enabled;
 	}
 
-	constructor({id, type, form, tag, label="", dataType="plaintext", advanced=false, enabled=true}) {
-		super({id});
-		this.id = id;
+	constructor({form, tag, label="", dataType, advanced=false, enabled=true}) {
+		super({tag});
 
 		this.advanced = advanced;
-		this.type = type;
 
 		this.clearAlerts = this.clearAlerts.bind(this);
-
-		switch (type) {
-			case "textbox":
-				this.handle = document.createElement("input");
-				break;
-			case "password":
-				this.handle = document.createElement("input");
-				this.handle.setAttribute("type", "password");
-				break;
-			case "textarea":
-				this.handle = document.createElement("textarea");
-				break;
-			case "button":
-				this.handle = document.createElement("button");
-				this.handle.appendChild(document.createTextNode(label));
-				label = "";
-				dataType = "none"
-				break;
-			case "output":
-				this.handle = document.createElement("textarea");
-				this.handle.setAttribute("readonly", true);
-				break;
-			default:
-				throw `Unknown input type: ${type}`;
-		}
 
 		if (label !== "") {
 			this.label = document.createElement("label");
@@ -131,53 +151,18 @@ class FormElement extends InterfaceElement {
 		this.dataType = dataType;
 
 		this.enabled = enabled;
-		this.handle.id = this.id;
 
 		if (this.advanced === true) this.hidden = true;
 
-		if (form !== undefined) {
-			this.form = form;
-			if (this.label !== undefined) {
-				this.label.setAttribute("for", this.id);
-				form.handle.appendChild(this.label);
-			}
-			form.handle.appendChild(this.handle);
-			form.elements.set(id, this);
-
-			if (this.advanced === true) this.hidden = !form.advanced;
+		this.fragment = new DocumentFragment();
+		if (this.label !== undefined) {
+			this.fragment.appendChild(this.label);
 		}
+		this.fragment.appendChild(this.handle);
+
+		if (this.advanced === true) this.hidden = !form.advanced;
 	}
 
-	// plaintext is string data
-	// b64 is raw ArrayBuffer data
-	// json-b64 is Object data
-	// or none, which gives undefined
-	#dataType = "none";
-	get dataType() {
-		return this.#dataType;
-	}
-	set dataType(x) {
-		function err(type, x) {
-			throw `'${type}' element can not support '${x}' data type`;
-		}
-
-		switch (x) {
-			case "plaintext":
-			case "b64":
-			case "json-b64":
-				let valid = ["textbox", "password", "textarea", "output"];
-				if (!valid.includes(this.type)) err(this.type, x);
-				break;
-			case "none":
-				if (this.type !== "button") err(this.type, x);
-				break;
-			default:
-				throw `Unknown data type: ${x}`;
-		}
-
-		this.#dataType = x;
-	}
-	
 	get value() {
 		this.clearAlerts();
 		switch (this.dataType) {
@@ -227,11 +212,11 @@ class FormElement extends InterfaceElement {
 		// type is alert-error or alert-info
 		
 		if (this.handle === undefined) {
-			throw `can not add alert for '${this.id}': still undefined`;
+			throw `can not add alert: still undefined`;
 		}
 
 		if (this.hidden === true) {
-			throw `can not add alert for '${this.id}': hidden`;
+			throw `can not add alert: hidden`;
 		}
 
 		if (title === undefined) {
