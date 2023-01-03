@@ -1,14 +1,35 @@
-let encForm = new Form({id: "encryption", tag: document.getElementById("encryption")});
+let encForm = new Form({label: "Encryption"});
 
 let encMsg = encForm.createTextArea({label: "Message"});
 let encPass = encForm.createPasswordInput({label: "Password"});
+let encManualMode = encForm.createCheckBox({
+	label: "Manual mode",
+	advanced: true
+});
+let encSalt = encForm.createTextBox({
+	label: "PBKDF2 salt",
+	dataType: "b64",
+	advanced: true,
+	disabled: true
+});
+let encIV = encForm.createTextBox({
+	label: "IV",
+	dataType: "b64",
+	advanced: true,
+	disabled: true
+});
 let encButton = encForm.createButton({label: "Encrypt"});
 let encOut = encForm.createOutput({
 	label: "Output",
 	dataType: "json-b64",
 });
+let encOutRaw = encForm.createOutput({
+	label: "Raw ciphertext",
+	dataType: "b64",
+	advanced: true
+});
 
-let decForm = new Form({id: "decryption", tag: document.getElementById("decryption")});
+let decForm = new Form({label: "Decryption"});
 
 let decMsg = decForm.createTextArea({
 	label: "Encrypted message",
@@ -51,9 +72,11 @@ function getKey(keyMaterial, salt) {
 async function encrypt() {
 	let keyMaterial = await getKeyMaterial(encPass.value);
 	let salt = window.crypto.getRandomValues(new Uint8Array(16));
+	encSalt.value = salt;
 	let key = await getKey(keyMaterial, salt);
 
 	let iv = window.crypto.getRandomValues(new Uint8Array(16));
+	encIV.value = iv;
 
 	let enc = new TextEncoder();
 	let msgEncoded = enc.encode(encMsg.value);
@@ -66,6 +89,8 @@ async function encrypt() {
 		key,
 		msgEncoded
 	);
+
+	encOutRaw.value = ciphertext;
 
 	encOut.value = {
 		"ciphertext": bufToB64(ciphertext),

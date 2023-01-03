@@ -1,7 +1,9 @@
 class InterfaceElement {
-	constructor({tag}) {
-		if (tag !== undefined) {
-			this.handle = tag;
+	constructor({fragment}) {
+		if (fragment === undefined) {
+			this.fragment = new DocumentFragment();
+		} else {
+			this.fragment = fragment;
 		}
 	}
 
@@ -32,12 +34,21 @@ function dataTypeSupports(params, validTypes) {
 }
 
 class Form extends InterfaceElement {
-	constructor({tag}) {
-		super({tag});
+	constructor({tag, par=document.body, label}) {
+		super({});
 
 		if (tag === undefined) {
 			this.handle = document.createElement("div");
+		} else {
+			this.handle = tag;
 		}
+
+		if (label !== undefined) {
+			let labelTag = document.createElement("h2");
+			labelTag.appendChild(document.createTextNode(label));
+			this.fragment.appendChild(labelTag);
+		}
+		this.fragment.appendChild(this.handle);
 
 		this.elements = [];
 
@@ -47,6 +58,8 @@ class Form extends InterfaceElement {
 		advancedToggle.handle.addEventListener('change', function() {
 			this.advanced = advancedToggle.value;
 		}.bind(this));
+
+		par.appendChild(this.fragment);
 	}
 
 	#advanced = false;
@@ -163,32 +176,27 @@ class FormElement extends InterfaceElement {
 	}
 
 	constructor({tag, labelTag, label="", fragment, dataType, advanced=false, enabled=true}) {
-		super({tag});
-
-		this.clearAlerts = this.clearAlerts.bind(this);
-
-		this.dataType = dataType;
-		this.enabled = enabled;
-		this.advanced = advanced;
-
-		if (this.advanced === true) this.hidden = true;
+		super({fragment});
 
 		this.labelText = label;
 		if (labelTag === undefined) {
 			this.labelTag = document.createElement("label");
 			this.labelTag.appendChild(document.createTextNode(this.labelText));
+			this.fragment.appendChild(this.labelTag);
+			this.fragment.appendChild(tag);
 		} else {
 			this.labelTag = labelTag;
 		}
-		if (fragment === undefined) {
-			this.fragment = new DocumentFragment();
-			if (this.labelTag !== undefined) {
-				this.fragment.appendChild(this.labelTag);
-			}
-			this.fragment.appendChild(this.handle);
-		} else {
-			this.fragment = fragment;
-		}
+
+
+		this.clearAlerts = this.clearAlerts.bind(this);
+
+		this.handle = tag;
+		this.dataType = dataType;
+		this.enabled = enabled;
+		this.advanced = advanced;
+
+		if (this.advanced === true) this.hidden = true;
 	}
 
 	get value() {
