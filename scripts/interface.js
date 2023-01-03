@@ -101,9 +101,11 @@ class Form extends InterfaceElement {
 	}
 
 	createButton(params) {
+		params.fragment = new DocumentFragment();
 		params.tag = document.createElement("button");
 		params.labelTag = document.createTextNode(params.label);
 		params.tag.appendChild(params.labelTag);
+		params.fragment.appendChild(params.tag);
 		dataTypeSupports(params, ["none"]);
 		return this.appendElement(new FormElement(params));
 	}
@@ -175,6 +177,8 @@ class FormElement extends InterfaceElement {
 		if (labelTag === undefined) {
 			this.labelTag = document.createElement("label");
 			this.labelTag.appendChild(document.createTextNode(this.labelText));
+		} else {
+			this.labelTag = labelTag;
 		}
 		if (fragment === undefined) {
 			this.fragment = new DocumentFragment();
