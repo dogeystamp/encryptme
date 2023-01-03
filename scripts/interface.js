@@ -13,8 +13,8 @@ class InterfaceElement {
 		this.#hidden = x;
 
 		this.handle.hidden = this.hidden;
-		if (this.label !== undefined) {
-			this.label.hidden = this.hidden;
+		if (this.labelTag !== undefined) {
+			this.labelTag.hidden = this.hidden;
 		}
 
 		if (this.hidden === true) this.clearAlerts();
@@ -42,6 +42,11 @@ class Form extends InterfaceElement {
 		this.elements = [];
 
 		this.clearAlerts = this.clearAlerts.bind(this);
+
+		let advancedToggle = this.createCheckBox({label: "Advanced settings"});
+		advancedToggle.handle.addEventListener('change', function() {
+			this.advanced = advancedToggle.value;
+		}.bind(this));
 	}
 
 	#advanced = false;
@@ -69,6 +74,10 @@ class Form extends InterfaceElement {
 
 	appendElement(elem) {
 		this.handle.append(elem.fragment);
+		this.elements.push(elem);
+		if (elem.advanced) {
+			elem.hidden = !this.advanced;
+		}
 		return elem;
 	}
 
@@ -151,7 +160,7 @@ class FormElement extends InterfaceElement {
 		this.handle.disabled = !this.#enabled;
 	}
 
-	constructor({form, tag, labelTag, label="", fragment, dataType, advanced=false, enabled=true}) {
+	constructor({tag, labelTag, label="", fragment, dataType, advanced=false, enabled=true}) {
 		super({tag});
 
 		this.clearAlerts = this.clearAlerts.bind(this);
@@ -176,8 +185,6 @@ class FormElement extends InterfaceElement {
 		} else {
 			this.fragment = fragment;
 		}
-
-		if (this.advanced === true) this.hidden = !form.advanced;
 	}
 
 	get value() {
