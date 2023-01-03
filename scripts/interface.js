@@ -100,6 +100,13 @@ class Form extends InterfaceElement {
 		return this.appendElement(new FormElement(params));
 	}
 
+	createMediumTextBox(params) {
+		params.tag = document.createElement("textarea");
+		params.tag.classList.add("mediumbox")
+		dataTypeSupports(params, ["plaintext", "b64", "json-b64"]);
+		return this.appendElement(new FormElement(params));
+	}
+
 	createPasswordInput(params) {
 		params.tag = document.createElement("input");
 		params.tag.setAttribute("type", "password");
