@@ -1,10 +1,24 @@
 class InterfaceElement {
+	rootNodes = [];
+
 	constructor({fragment}) {
 		if (fragment === undefined) {
 			this.fragment = new DocumentFragment();
 		} else {
 			this.fragment = fragment;
 		}
+	}
+
+	scanNodes() {
+		this.rootNodes = [];
+		for (const node of this.fragment.children) {
+			this.rootNodes.push(node);
+		}
+	}
+
+	mount(par) {
+		this.scanNodes();
+		par.append(this.fragment);
 	}
 
 	#hidden = false;
@@ -14,14 +28,12 @@ class InterfaceElement {
 	set hidden(x) {
 		this.#hidden = x;
 
-		this.handle.hidden = this.hidden;
-		if (this.labelTag !== undefined) {
-			this.labelTag.hidden = this.hidden;
+		for (const node of this.rootNodes) {
+			node.hidden = this.hidden;
 		}
 
 		if (this.hidden === true) this.clearAlerts();
 	}
-
 }
 
 function dataTypeSupports(params, validTypes) {
@@ -86,7 +98,7 @@ class Form extends InterfaceElement {
 	}
 
 	appendElement(elem) {
-		this.handle.append(elem.fragment);
+		elem.mount(this.handle);
 		this.elements.push(elem);
 		if (elem.advanced) {
 			elem.hidden = !this.advanced;
@@ -194,7 +206,6 @@ class FormElement extends InterfaceElement {
 		} else {
 			this.labelTag = labelTag;
 		}
-
 
 		this.clearAlerts = this.clearAlerts.bind(this);
 
