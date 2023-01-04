@@ -54,7 +54,21 @@ let decMsg = decForm.createTextArea({
 	label: "Encrypted message",
 	dataType: "json-b64",
 });
-let decPass = decForm.createPasswordInput({label: "Password"});
+let decPass = decForm.createPasswordInput({
+	label: "Password",
+	enabledFunc: function() {return !decManualKey.value}
+});
+let decKey = decForm.createMediumTextBox({
+	label: "Key",
+	dataType: "b64",
+	advanced: true,
+	enabled: false,
+	enabledFunc: function() {return decManualKey.value}
+});
+let decManualKey = decForm.createCheckBox({
+	label: "Use fixed key instead of password",
+	advanced: true
+});
 let decButton = decForm.createButton({label: "Decrypt"});
 let decOut = decForm.createOutput({label: "Output"});
 
@@ -90,7 +104,8 @@ function getKey(keyMaterial, salt) {
 encButton.handle.addEventListener("click", async function() {
 	let keyMaterial = await getKeyMaterial(encPass.value);
 	let key;
-	let salt;
+	let salt = encSalt.value;
+
 	if (encManualKey.value) {
 		key = await window.crypto.subtle.importKey(
 			"raw",
@@ -157,7 +172,18 @@ decButton.handle.addEventListener("click", async function() {
 	}
 
 	let keyMaterial = await getKeyMaterial(decPass.value);
-	let key = await getKey(keyMaterial, salt);
+	let key;
+	if (decManualKey.value) {
+		key = await window.crypto.subtle.importKey(
+			"raw",
+			decKey.value,
+			{"name": "AES-GCM"},
+			true,
+			["encrypt", "decrypt"]
+		);
+	} else {
+		key = await getKey(keyMaterial, salt);
+	}
 
 	let plaintext;
 
