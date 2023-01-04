@@ -1,22 +1,41 @@
 let encForm = new Form({label: "Encryption"});
 
 let encMsg = encForm.createTextArea({label: "Message"});
-let encPass = encForm.createPasswordInput({label: "Password"});
-let encManualMode = encForm.createCheckBox({
-	label: "Manual mode",
-	advanced: true
+let encPass = encForm.createPasswordInput({
+	label: "Password",
+	enabledFunc: function() {return !encManualKey.value}
 });
-let encSalt = encForm.createTextBox({
+let encSalt = encForm.createMediumTextBox({
 	label: "PBKDF2 salt",
 	dataType: "b64",
 	advanced: true,
-	disabled: true
+	enabled: false,
+	enabledFunc: function() {return encManualSalt.value && !encManualKey.value}
 });
-let encIV = encForm.createTextBox({
+let encManualSalt = encForm.createCheckBox({
+	label: "Use fixed salt instead of random",
+	advanced: true
+});
+let encKey = encForm.createMediumTextBox({
+	label: "Key",
+	dataType: "b64",
+	advanced: true,
+	enabled: false,
+	enabledFunc: function() {return encManualKey.value}
+});
+let encManualKey = encForm.createCheckBox({
+	label: "Use fixed key instead of password",
+	advanced: true
+});
+let encIV = encForm.createMediumTextBox({
 	label: "IV",
 	dataType: "b64",
 	advanced: true,
-	disabled: true
+	enabledFunc: function() {return encManualIV.value}
+});
+let encManualIV = encForm.createCheckBox({
+	label: "Use fixed IV instead of random",
+	advanced: true
 });
 let encButton = encForm.createButton({label: "Encrypt"});
 let encOut = encForm.createOutput({
@@ -38,7 +57,6 @@ let decMsg = decForm.createTextArea({
 let decPass = decForm.createPasswordInput({label: "Password"});
 let decButton = decForm.createButton({label: "Decrypt"});
 let decOut = decForm.createOutput({label: "Output"});
-
 
 function getKeyMaterial(password) {
 	let enc = new TextEncoder();
@@ -69,14 +87,38 @@ function getKey(keyMaterial, salt) {
 	);
 }
 
-async function encrypt() {
-	let keyMaterial = await getKeyMaterial(encPass.value);
-	let salt = window.crypto.getRandomValues(new Uint8Array(16));
-	encSalt.value = salt;
-	let key = await getKey(keyMaterial, salt);
+encButton.handle.addEventListener("click", async function() {
 
-	let iv = window.crypto.getRandomValues(new Uint8Array(16));
-	encIV.value = iv;
+	let salt;
+	if (encSalt.enabledFunc()) {
+		salt = encSalt.value;
+	} else {
+		salt = window.crypto.getRandomValues(new Uint8Array(16));
+		encSalt.value = salt;
+	}
+
+	let keyMaterial = await getKeyMaterial(encPass.value);
+	let key;
+	if (encManualKey.value) {
+		key = await window.crypto.subtle.importKey(
+			"raw",
+			encKey.value,
+			{"name": "AES-GCM"},
+			true,
+			["encrypt", "decrypt"]
+		);
+	} else {
+		key = await getKey(keyMaterial, salt);
+		encKey.value = await window.crypto.subtle.exportKey("raw", key);
+	}
+
+	let iv;
+	if (encManualIV.value) {
+		iv = encIV.value;
+	} else {
+		iv = window.crypto.getRandomValues(new Uint8Array(16));
+		encIV.value = iv;
+	}
 
 	let enc = new TextEncoder();
 	let msgEncoded = enc.encode(encMsg.value);
@@ -97,9 +139,9 @@ async function encrypt() {
 		"salt": bufToB64(salt),
 		"iv": bufToB64(iv)
 	}
-}
+});
 
-async function decrypt() {
+decButton.handle.addEventListener("click", async function() {
 	let msgEncoded = decMsg.value;
 
 	let ciphertext, iv, salt;
@@ -135,7 +177,4 @@ async function decrypt() {
 
 	let dec = new TextDecoder();
 	decOut.value = `${dec.decode(plaintext)}`;
-}
-
-encButton.handle.addEventListener("click", encrypt);
-decButton.handle.addEventListener("click", decrypt);
+});

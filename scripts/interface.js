@@ -1,11 +1,17 @@
 class InterfaceElement {
 	rootNodes = [];
 
-	constructor({fragment}) {
+	constructor({fragment, enabledFunc}) {
 		if (fragment === undefined) {
 			this.fragment = new DocumentFragment();
 		} else {
 			this.fragment = fragment;
+		}
+
+		if (enabledFunc === undefined) {
+			this.enabledFunc = function(){ return true; };
+		} else {
+			this.enabledFunc = enabledFunc;
 		}
 	}
 
@@ -34,6 +40,15 @@ class InterfaceElement {
 
 		if (this.hidden === true) this.clearAlerts();
 	}
+
+	#enabled = true;
+	get enabled() {
+		return this.#enabled;
+	}
+	set enabled(x) {
+		this.#enabled = x;
+		this.handle.disabled = !this.#enabled;
+	}
 }
 
 function dataTypeSupports(params, validTypes) {
@@ -59,6 +74,7 @@ class Form extends InterfaceElement {
 			let labelTag = document.createElement("h2");
 			labelTag.appendChild(document.createTextNode(label));
 			this.fragment.appendChild(labelTag);
+			this.rootNodes.push(labelTag);
 		}
 		this.fragment.appendChild(this.handle);
 
@@ -100,6 +116,7 @@ class Form extends InterfaceElement {
 	appendElement(elem) {
 		elem.mount(this.handle);
 		this.elements.push(elem);
+		this.rootNodes.push(...elem.rootNodes);
 		if (elem.advanced) {
 			elem.hidden = !this.advanced;
 		}
@@ -154,6 +171,11 @@ class Form extends InterfaceElement {
 		li.appendChild(params.tag);
 		li.appendChild(params.labelTag);
 		dataTypeSupports(params, ["bool"]);
+		params.tag.addEventListener("change", function() {
+			for (const elem of this.elements) {
+				elem.enabled = elem.enabledFunc();
+			}
+		}.bind(this));
 		return this.appendElement(new FormElement(params));
 	}
 
@@ -185,17 +207,8 @@ function bufToB64 (buf) {
 }
 
 class FormElement extends InterfaceElement {
-	#enabled = true;
-	get enabled() {
-		return this.#enabled;
-	}
-	set enabled(x) {
-		this.#enabled = x;
-		this.handle.disabled = !this.#enabled;
-	}
-
-	constructor({tag, labelTag, label="", fragment, dataType, advanced=false, enabled=true}) {
-		super({fragment});
+	constructor({tag, labelTag, label="", fragment, dataType, advanced=false, enabled=true, enabledFunc}) {
+		super({fragment, enabled, enabledFunc});
 
 		this.labelText = label;
 		if (labelTag === undefined) {
@@ -211,7 +224,6 @@ class FormElement extends InterfaceElement {
 
 		this.handle = tag;
 		this.dataType = dataType;
-		this.enabled = enabled;
 		this.advanced = advanced;
 
 		if (this.advanced === true) this.hidden = true;
