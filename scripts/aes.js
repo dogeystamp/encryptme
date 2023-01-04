@@ -88,17 +88,9 @@ function getKey(keyMaterial, salt) {
 }
 
 encButton.handle.addEventListener("click", async function() {
-
-	let salt;
-	if (encSalt.enabledFunc()) {
-		salt = encSalt.value;
-	} else {
-		salt = window.crypto.getRandomValues(new Uint8Array(16));
-		encSalt.value = salt;
-	}
-
 	let keyMaterial = await getKeyMaterial(encPass.value);
 	let key;
+	let salt;
 	if (encManualKey.value) {
 		key = await window.crypto.subtle.importKey(
 			"raw",
@@ -108,6 +100,13 @@ encButton.handle.addEventListener("click", async function() {
 			["encrypt", "decrypt"]
 		);
 	} else {
+		if (encSalt.enabledFunc()) {
+			salt = encSalt.value;
+		} else {
+			salt = window.crypto.getRandomValues(new Uint8Array(16));
+			encSalt.value = salt;
+		}
+
 		key = await getKey(keyMaterial, salt);
 		encKey.value = await window.crypto.subtle.exportKey("raw", key);
 	}
