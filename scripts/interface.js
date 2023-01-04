@@ -218,7 +218,7 @@ function bufToB64 (buf) {
 }
 
 class FormElement extends InterfaceElement {
-	constructor({tag, labelTag, label="", fragment, dataType, advanced=false, enabled=true, enabledFunc}) {
+	constructor({tag, labelTag, label="", value, fragment, dataType, advanced=false, enabled=true, enabledFunc}) {
 		super({fragment, enabled, enabledFunc});
 
 		this.labelText = label;
@@ -238,6 +238,8 @@ class FormElement extends InterfaceElement {
 		this.advanced = advanced;
 
 		if (this.advanced === true) this.hidden = true;
+
+		if (value !== undefined) this.value = value;
 	}
 
 	get value() {
