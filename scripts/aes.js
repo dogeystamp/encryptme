@@ -116,6 +116,9 @@ encButton.handle.addEventListener("click", async function() {
 	let pbkdf2Iters = encPbkdf2Iters.value;
 
 	if (pbkdf2Iters === undefined) return;
+	if (pbkdf2Iters > 1000000) {
+		encPbkdf2Iters.alertBox("alert-info", `PBKDF2 is using ${pbkdf2Iters} iterations: this might take a long time...`);
+	}
 
 	if (encManualKey.value) {
 		key = await window.crypto.subtle.importKey(
@@ -178,6 +181,8 @@ decButton.handle.addEventListener("click", async function() {
 		pbkdf2Iters = msgEncoded.pbkdf2Iters;
 		if (pbkdf2Iters < 1 || pbkdf2Iters%1 !== 0) {
 			decMsg.alertBox("alert-error", "Invalid PBKDF2 iters setting.");
+		} else if (pbkdf2Iters > 1000000) {
+			decMsg.alertBox("alert-info", `PBKDF2 is using ${pbkdf2Iters} iterations: this might take a long time...`);
 		}
 	} catch (e) {
 		decMsg.alertBox("alert-error", "Invalid encrypted payload.");
