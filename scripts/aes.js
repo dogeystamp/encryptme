@@ -5,6 +5,14 @@ let encPass = encForm.createPasswordInput({
 	label: "Password",
 	enabledFunc: function() {return !encManualKey.value}
 });
+let encPbkdf2Iters = encForm.createNumberInput({
+	label: "PBKDF2 iterations",
+	minValue: 1,
+	step: 1,
+	value: 300000,
+	advanced: true,
+	enabledFunc: function() {return !encManualKey.value}
+});
 let encSalt = encForm.createMediumTextBox({
 	label: "PBKDF2 salt",
 	dataType: "b64",
@@ -83,13 +91,13 @@ function getKeyMaterial(password) {
 	);
 }
 
-function getKey(keyMaterial, salt) {
+function getKey(keyMaterial, salt, pbkdf2Iters) {
 	return window.crypto.subtle.deriveKey(
 		{
 			"name": "PBKDF2",
 			"hash": "SHA-256",
 			"salt": salt,
-			"iterations": 300000
+			"iterations": pbkdf2Iters
 		},
 		keyMaterial,
 		{
@@ -105,6 +113,9 @@ encButton.handle.addEventListener("click", async function() {
 	let keyMaterial = await getKeyMaterial(encPass.value);
 	let key;
 	let salt = encSalt.value;
+	let pbkdf2Iters = encPbkdf2Iters.value;
+
+	if (pbkdf2Iters === undefined) return;
 
 	if (encManualKey.value) {
 		key = await window.crypto.subtle.importKey(
@@ -122,7 +133,7 @@ encButton.handle.addEventListener("click", async function() {
 			encSalt.value = salt;
 		}
 
-		key = await getKey(keyMaterial, salt);
+		key = await getKey(keyMaterial, salt, pbkdf2Iters);
 		encKey.value = await window.crypto.subtle.exportKey("raw", key);
 	}
 
@@ -151,23 +162,32 @@ encButton.handle.addEventListener("click", async function() {
 	encOut.value = {
 		"ciphertext": bufToB64(ciphertext),
 		"salt": bufToB64(salt),
-		"iv": bufToB64(iv)
+		"iv": bufToB64(iv),
+		"pbkdf2Iters": pbkdf2Iters
 	}
 });
 
 decButton.handle.addEventListener("click", async function() {
 	let msgEncoded = decMsg.value;
 
-	let ciphertext, iv, salt;
+	let ciphertext, iv, salt, pbkdf2Iters;
 	try {
 		ciphertext = new b64ToBuf(msgEncoded.ciphertext);
 		iv = new Uint8Array(b64ToBuf(msgEncoded.iv));
 		salt = new Uint8Array(b64ToBuf(msgEncoded.salt));
+		pbkdf2Iters = msgEncoded.pbkdf2Iters;
+		if (pbkdf2Iters < 1 || pbkdf2Iters%1 !== 0) {
+			decMsg.alertBox("alert-error", "Invalid PBKDF2 iters setting.");
+		}
 	} catch (e) {
-		decMsg.alertBox("alert-error", "Invalid base64 value.");
+		decMsg.alertBox("alert-error", "Invalid encrypted payload.");
 	}
 
-	if (ciphertext === undefined || iv === undefined || salt === undefined) {
+	if (ciphertext === undefined
+		|| iv === undefined
+		|| salt === undefined
+		|| pbkdf2Iters === undefined
+	) {
 		return;
 	}
 
@@ -182,7 +202,7 @@ decButton.handle.addEventListener("click", async function() {
 			["encrypt", "decrypt"]
 		);
 	} else {
-		key = await getKey(keyMaterial, salt);
+		key = await getKey(keyMaterial, salt, pbkdf2Iters);
 	}
 
 	let plaintext;
