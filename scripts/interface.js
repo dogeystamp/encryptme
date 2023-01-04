@@ -143,6 +143,17 @@ class Form extends InterfaceElement {
 		return this.appendElement(new FormElement(params));
 	}
 
+	createNumberInput(params) {
+		params.tag = document.createElement("input");
+		params.tag.setAttribute("type", "number");
+		dataTypeSupports(params, ["number"]);
+		if (params.maxValue !== undefined) params.tag.max = params.maxValue;
+		if (params.minValue !== undefined) params.tag.min = params.minValue;
+		if (params.step !== undefined) params.tag.step = params.step;
+		if (params.required !== undefined) params.tag.required = params.required;
+		return this.appendElement(new FormElement(params));
+	}
+
 	createTextArea(params) {
 		params.tag = document.createElement("textarea");
 		dataTypeSupports(params, ["plaintext", "b64", "json-b64"]);
@@ -232,6 +243,12 @@ class FormElement extends InterfaceElement {
 	get value() {
 		this.clearAlerts();
 		switch (this.dataType) {
+			case "number":
+				if (this.handle.checkValidity() == false) {
+					this.alertBox("alert-error", this.handle.validationMessage);
+					return undefined;
+				}
+				return Number(this.handle.value);
 			case "plaintext":
 				return this.handle.value;
 			case "b64":
@@ -263,6 +280,7 @@ class FormElement extends InterfaceElement {
 	}
 	set value(x) {
 		switch (this.dataType) {
+			case "number":
 			case "plaintext":
 				this.handle.value = x;
 				break;
