@@ -1,4 +1,6 @@
-let encForm = new Form({label: "Encryption"});
+let tabs = new TabList({});
+
+let encForm = tabs.createForm({label: "Encryption"});
 
 let encMsg = encForm.createTextArea({label: "Message"});
 let encPass = encForm.createPasswordInput({
@@ -56,7 +58,7 @@ let encOutRaw = encForm.createOutput({
 	advanced: true
 });
 
-let decForm = new Form({label: "Decryption"});
+let decForm = tabs.createForm({label: "Decryption"});
 
 let decMsg = decForm.createTextArea({
 	label: "Encrypted message",

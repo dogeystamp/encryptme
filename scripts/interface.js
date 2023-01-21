@@ -70,17 +70,15 @@ class Form extends InterfaceElement {
 			this.handle = tag;
 		}
 
-		if (label !== undefined) {
-			let labelTag = document.createElement("h2");
-			labelTag.appendChild(document.createTextNode(label));
-			this.fragment.appendChild(labelTag);
-			this.rootNodes.push(labelTag);
-		}
 		this.fragment.appendChild(this.handle);
 
 		this.elements = [];
 
 		this.clearAlerts = this.clearAlerts.bind(this);
+
+		if (label !== undefined) {
+			this.createHeader({label: label});
+		}
 
 		let advancedToggle = this.createCheckBox({label: "Advanced settings"});
 		advancedToggle.handle.addEventListener('change', function() {
@@ -88,6 +86,24 @@ class Form extends InterfaceElement {
 		}.bind(this));
 
 		par.appendChild(this.fragment);
+	}
+
+	#hidden = false;
+	get hidden() {
+		return this.#hidden;
+	}
+	set hidden(x) {
+		this.#hidden = x;
+
+		for (const element of this.elements) {
+			if (element.advanced === true) {
+				element.hidden = !this.advanced || this.hidden;
+			} else {
+				element.hidden = this.hidden;
+			}
+		}
+
+		if (this.hidden === true) this.clearAlerts();
 	}
 
 	#advanced = false;
@@ -120,7 +136,17 @@ class Form extends InterfaceElement {
 		if (elem.advanced) {
 			elem.hidden = !this.advanced;
 		}
+		if (this.hidden) elem.hidden = true;
 		return elem;
+	}
+
+	createHeader(params) {
+		params.tag = document.createElement("h2");
+		dataTypeSupports(params, ["none"]);
+		let labelTag = document.createTextNode(params.label);
+		params.tag.appendChild(labelTag);
+		params.label = undefined;
+		return this.appendElement(new FormElement(params));
 	}
 
 	createTextBox(params) {
@@ -343,5 +369,72 @@ class FormElement extends InterfaceElement {
 			box.remove();
 		}
 		this.alerts = [];
+	}
+}
+
+class Tab extends InterfaceElement {
+	constructor({form, label=""}) {
+		super({});
+
+		this.form = form;
+
+		this.handle = document.createElement("button");
+		this.fragment.appendChild(this.handle);
+
+		this.handle.appendChild(document.createTextNode(label));
+	}
+}
+
+class TabList extends InterfaceElement {
+	constructor({tag, par=document.body}) {
+		super({})
+
+		this.par = par;
+
+		if (tag === undefined) {
+			this.handle = document.createElement("div");
+		} else {
+			this.handle = tag;
+		}
+		this.fragment.appendChild(this.handle);
+		par.appendChild(this.fragment);
+	}
+
+	forms = []
+	#activeForm;
+	set activeForm(x) {
+		this.#activeForm = x;
+		for (const form of this.forms) {
+			if (form !== x) {
+				form.hidden = true;
+			} else {
+				form.hidden = false;
+			}
+		}
+	}
+	get activeForm() {
+		return this.#activeForm;
+	}
+
+	createForm(params) {
+		if (params.par === undefined) params.par = this.par;
+
+		let form = new Form(params);
+		this.forms.push(form);
+
+		let tab = new Tab({
+			label: params.label,
+			form: form
+		});
+		tab.handle.addEventListener('click', function() {
+			this.activeForm = form;
+		}.bind(this));
+
+		this.handle.appendChild(tab.fragment);
+
+		if (this.activeForm === undefined) this.activeForm = form;
+		else form.hidden = true;
+
+		return form;
 	}
 }
