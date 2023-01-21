@@ -393,6 +393,7 @@ class TabList extends InterfaceElement {
 
 		if (tag === undefined) {
 			this.handle = document.createElement("div");
+			this.handle.classList.add("tabList");
 		} else {
 			this.handle = tag;
 		}
@@ -400,15 +401,18 @@ class TabList extends InterfaceElement {
 		par.appendChild(this.fragment);
 	}
 
-	forms = []
+	tabs = []
+
 	#activeForm;
 	set activeForm(x) {
 		this.#activeForm = x;
-		for (const form of this.forms) {
-			if (form !== x) {
-				form.hidden = true;
+		for (const tab of this.tabs) {
+			if (tab.form !== x) {
+				tab.form.hidden = true;
+				tab.handle.classList.remove("active");
 			} else {
-				form.hidden = false;
+				tab.form.hidden = false;
+				tab.handle.classList.add("active");
 			}
 		}
 	}
@@ -420,12 +424,13 @@ class TabList extends InterfaceElement {
 		if (params.par === undefined) params.par = this.par;
 
 		let form = new Form(params);
-		this.forms.push(form);
 
 		let tab = new Tab({
 			label: params.label,
 			form: form
 		});
+		this.tabs.push(tab);
+
 		tab.handle.addEventListener('click', function() {
 			this.activeForm = form;
 		}.bind(this));

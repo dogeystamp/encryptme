@@ -109,6 +109,24 @@ button:active {
 	opacity: 50%;
 }
 
+.tabList {
+	border-radius: 5px;
+}
+.tabList button {
+	display: inline;
+	width: 6em;
+	margin: 0;
+	border: 1px solid #44444444;
+	margin-right: 0.2em;
+}
+.tabList button:hover {
+	background: #aaaaaa44;
+}
+.tabList button.active {
+	border: none;
+	background: #0077ff44;
+}
+
 @media (prefers-color-scheme: dark) {
 	body {
 		color: #c9d1d9;
