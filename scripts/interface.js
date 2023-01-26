@@ -194,6 +194,36 @@ class Form extends InterfaceElement {
 		return this.appendElement(new FormElement(params));
 	}
 
+	createDropDown(params) {
+		// example for params.options:
+		/*
+		[
+			{
+				value: "volvo"
+				name: "Volvo"
+			},
+			{
+				value: "benz"
+				name: "Mercedes Benz"
+			}
+		]
+		*/
+		params.fragment = new DocumentFragment();
+		params.tag = document.createElement("select");
+		params.labelTag = document.createElement("label");
+		params.labelTag.appendChild(document.createTextNode(params.label));
+		params.fragment.appendChild(params.labelTag);
+		params.fragment.appendChild(params.tag);
+		dataTypeSupports(params, ["category"]);
+		for (const option of params.options) {
+			let optTag = document.createElement("option");
+			optTag.value = option.value;
+			optTag.appendChild(document.createTextNode(option.name));
+			params.tag.appendChild(optTag);
+		}
+		return this.appendElement(new FormElement(params));
+	}
+
 	createTextArea(params) {
 		params.tag = document.createElement("textarea");
 		dataTypeSupports(params, ["plaintext", "b64", "json-b64"]);
@@ -316,6 +346,8 @@ class FormElement extends InterfaceElement {
 				}
 			case "bool":
 				return this.handle.checked;
+			case "category":
+				return this.handle.value;
 			case "none":
 				return undefined;
 		}
@@ -334,6 +366,9 @@ class FormElement extends InterfaceElement {
 				break;
 			case "bool":
 				this.handle.checked = x;
+				break;
+			case "category":
+				this.handle.value = x;
 				break;
 		}
 	}
