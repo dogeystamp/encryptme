@@ -61,6 +61,16 @@ let encManualIV = encForm.createCheckBox({
 	label: "Use fixed IV instead of random",
 	advanced: true
 });
+let encMode = encForm.createDropDown({
+	label: "AES mode",
+	advanced: true,
+	options: [
+		{
+			name: "AES-GCM",
+			value: "AES-GCM"
+		},
+	]
+});
 let encButton = encForm.createButton({label: "Encrypt"});
 let encOut = encForm.createOutput({
 	label: "Output",
@@ -125,6 +135,17 @@ function getKey(keyMaterial, salt, pbkdf2Iters) {
 	);
 }
 
+async function aesGcmEnc(key, iv, msgEncoded) {
+	return window.crypto.subtle.encrypt(
+		{
+			"name": "AES-GCM",
+			"iv": iv
+		},
+		key,
+		msgEncoded
+	);
+}
+
 encButton.handle.addEventListener("click", async function() {
 	let keyMaterial = await getKeyMaterial(encPass.value);
 	let key;
@@ -140,7 +161,7 @@ encButton.handle.addEventListener("click", async function() {
 		key = await window.crypto.subtle.importKey(
 			"raw",
 			encKey.value,
-			{"name": "AES-GCM"},
+			{"name": encMode.value},
 			true,
 			["encrypt", "decrypt"]
 		);
@@ -167,14 +188,7 @@ encButton.handle.addEventListener("click", async function() {
 	let enc = new TextEncoder();
 	let msgEncoded = enc.encode(encMsg.value);
 
-	let ciphertext = await window.crypto.subtle.encrypt(
-		{
-			"name": "AES-GCM",
-			"iv": iv
-		},
-		key,
-		msgEncoded
-	);
+	let ciphertext = await aesGcmEnc(key, iv, msgEncoded);
 
 	encOutRaw.value = ciphertext;
 
@@ -182,26 +196,39 @@ encButton.handle.addEventListener("click", async function() {
 		"ciphertext": bufToB64(ciphertext),
 		"salt": bufToB64(salt),
 		"iv": bufToB64(iv),
-		"pbkdf2Iters": pbkdf2Iters
+		"encMode": encMode.value,
+		"pbkdf2Iters": pbkdf2Iters,
 	}
 });
+
+async function aesGcmDec(key, iv, ciphertext) {
+	return window.crypto.subtle.decrypt(
+		{
+			"name": "AES-GCM",
+			"iv": iv
+		},
+		key,
+		ciphertext
+	);
+}
 
 decButton.handle.addEventListener("click", async function() {
 	let msgEncoded = decMsg.value;
 
-	let ciphertext, iv, salt, pbkdf2Iters;
+	let ciphertext, iv, salt, encMode, pbkdf2Iters;
 	try {
 		ciphertext = new b64ToBuf(msgEncoded.ciphertext);
 		iv = new Uint8Array(b64ToBuf(msgEncoded.iv));
 		salt = new Uint8Array(b64ToBuf(msgEncoded.salt));
+		encMode = msgEncoded.encMode;
 		pbkdf2Iters = msgEncoded.pbkdf2Iters;
 		if (pbkdf2Iters < 1 || pbkdf2Iters%1 !== 0) {
-			decMsg.alertBox("alert-error", "Invalid PBKDF2 iters setting.");
+			throw Error(`Invalid PBKDF2 iterations setting: ${pbkdf2Iters}`);
 		} else if (pbkdf2Iters > 1000000) {
 			decMsg.alertBox("alert-info", `PBKDF2 is using ${pbkdf2Iters} iterations: this might take a long time...`);
 		}
 	} catch (e) {
-		decMsg.alertBox("alert-error", "Invalid encrypted payload.");
+		decMsg.handleError(e, "Invalid encrypted payload.");
 	}
 
 	if (ciphertext === undefined
@@ -215,13 +242,17 @@ decButton.handle.addEventListener("click", async function() {
 	let keyMaterial = await getKeyMaterial(decPass.value);
 	let key;
 	if (decManualKey.value) {
-		key = await window.crypto.subtle.importKey(
-			"raw",
-			decKey.value,
-			{"name": "AES-GCM"},
-			true,
-			["encrypt", "decrypt"]
-		);
+		try {
+			key = await window.crypto.subtle.importKey(
+				"raw",
+				decKey.value,
+				{"name": encMode},
+				true,
+				["encrypt", "decrypt"]
+			);
+		} catch (e) {
+			decMsg.handleError(e);
+		}
 	} else {
 		key = await getKey(keyMaterial, salt, pbkdf2Iters);
 	}
@@ -229,16 +260,9 @@ decButton.handle.addEventListener("click", async function() {
 	let plaintext;
 
 	try {
-		plaintext = await window.crypto.subtle.decrypt(
-			{
-				"name": "AES-GCM",
-				"iv": iv
-			},
-			key,
-			ciphertext
-		);
+		plaintext = await aesGcmDec(key, iv, ciphertext);
 	} catch (e) {
-		decPass.alertBox("alert-error", "Decryption error: incorrect password?");
+		decMsg.handleError(e, "Error during decryption.");
 	}
 
 	let dec = new TextDecoder();
