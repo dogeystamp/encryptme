@@ -66,8 +66,12 @@ let encMode = encForm.createDropDown({
 	advanced: true,
 	options: [
 		{
-			name: "AES-GCM",
+			name: "AES-GCM (Galois/Counter Mode)",
 			value: "AES-GCM"
+		},
+		{
+			name: "AES-CBC (Cipher Block Chaining)",
+			value: "AES-CBC"
 		},
 	]
 });
@@ -117,7 +121,7 @@ function getKeyMaterial(password) {
 	);
 }
 
-function getKey(keyMaterial, salt, pbkdf2Iters) {
+function getKey(keyMaterial, salt, pbkdf2Iters, encMode) {
 	return window.crypto.subtle.deriveKey(
 		{
 			"name": "PBKDF2",
@@ -127,7 +131,7 @@ function getKey(keyMaterial, salt, pbkdf2Iters) {
 		},
 		keyMaterial,
 		{
-			"name": "AES-GCM",
+			"name": encMode,
 			"length": 256
 		},
 		true,
@@ -139,6 +143,16 @@ async function aesGcmEnc(key, iv, msgEncoded) {
 	return window.crypto.subtle.encrypt(
 		{
 			"name": "AES-GCM",
+			"iv": iv
+		},
+		key,
+		msgEncoded
+	);
+}
+async function aesCbcEnc(key, iv, msgEncoded) {
+	return window.crypto.subtle.encrypt(
+		{
+			"name": "AES-CBC",
 			"iv": iv
 		},
 		key,
@@ -173,7 +187,7 @@ encButton.handle.addEventListener("click", async function() {
 			encSalt.value = salt;
 		}
 
-		key = await getKey(keyMaterial, salt, pbkdf2Iters);
+		key = await getKey(keyMaterial, salt, pbkdf2Iters, encMode.value);
 		encKey.value = await window.crypto.subtle.exportKey("raw", key);
 	}
 
@@ -188,7 +202,19 @@ encButton.handle.addEventListener("click", async function() {
 	let enc = new TextEncoder();
 	let msgEncoded = enc.encode(encMsg.value);
 
-	let ciphertext = await aesGcmEnc(key, iv, msgEncoded);
+	let ciphertext; 
+	switch (encMode.value) {
+		case "AES-GCM":
+			ciphertext = await aesGcmEnc(key, iv, msgEncoded);
+			break;
+		case "AES-CBC":
+			ciphertext = await aesCbcEnc(key, iv, msgEncoded);
+			break;
+		default:
+			let e = Error(`Mode '${encMode.value}' is not implemented.`);
+			encMode.handleError(e);
+			return;
+	}
 
 	encOutRaw.value = ciphertext;
 
@@ -205,6 +231,16 @@ async function aesGcmDec(key, iv, ciphertext) {
 	return window.crypto.subtle.decrypt(
 		{
 			"name": "AES-GCM",
+			"iv": iv
+		},
+		key,
+		ciphertext
+	);
+}
+async function aesCbcDec(key, iv, ciphertext) {
+	return window.crypto.subtle.decrypt(
+		{
+			"name": "AES-CBC",
 			"iv": iv
 		},
 		key,
@@ -254,15 +290,28 @@ decButton.handle.addEventListener("click", async function() {
 			decMsg.handleError(e);
 		}
 	} else {
-		key = await getKey(keyMaterial, salt, pbkdf2Iters);
+		key = await getKey(keyMaterial, salt, pbkdf2Iters, encMode);
 	}
 
 	let plaintext;
 
 	try {
-		plaintext = await aesGcmDec(key, iv, ciphertext);
+		switch (encMode) {
+			case "AES-GCM":
+				plaintext = await aesGcmDec(key, iv, ciphertext);
+				break;
+			case "AES-CBC":
+				plaintext = await aesCbcDec(key, iv, ciphertext);
+				break;
+			default:
+				throw Error(`Mode '${encMode.value}' is not implemented.`);
+	}
 	} catch (e) {
-		decMsg.handleError(e, "Error during decryption.");
+		if (e.message !== ""  && e.message !== undefined) {
+			decMsg.handleError(e, "Error during decryption.");
+		} else {
+			decMsg.handleError(Error("Could not decrypt; is your password/key correct?"));
+		}
 	}
 
 	let dec = new TextDecoder();
