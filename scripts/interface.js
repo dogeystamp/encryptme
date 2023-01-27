@@ -413,6 +413,13 @@ class FormElement extends InterfaceElement {
 		this.handle.after(box);
 		this.alerts.push(box);
 	}
+	handleError(e, extraInfo="") {
+		if (extraInfo !== "") {
+			extraInfo = ` (${extraInfo})`;
+		}
+		this.alertBox("alert-error", e.message + extraInfo);
+		console.error(e);
+	}
 	clearAlerts() {
 		for (const box of this.alerts) {
 			box.remove();
