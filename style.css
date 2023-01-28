@@ -127,6 +127,11 @@ button:active {
 	background: #0077ff44;
 }
 
+.page-header a {
+	color: #000000;
+	text-decoration: none;
+}
+
 @media (prefers-color-scheme: dark) {
 	body {
 		color: #c9d1d9;
@@ -147,6 +152,10 @@ button:active {
 
 	textarea, input, button {
 		background: #1d2127;
+		color: #c9d1d9;
+	}
+
+	.page-header a {
 		color: #c9d1d9;
 	}
 }
