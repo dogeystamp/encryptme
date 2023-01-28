@@ -15,7 +15,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 class InterfaceElement {
 	rootNodes = [];
 
-	constructor({fragment, enabledFunc}) {
+	constructor({fragment, enabledFunc, visibleFunc}) {
 		if (fragment === undefined) {
 			this.fragment = new DocumentFragment();
 		} else {
@@ -27,6 +27,16 @@ class InterfaceElement {
 		} else {
 			this.enabledFunc = enabledFunc;
 		}
+		if (visibleFunc === undefined) {
+			this.visibleFunc = function(){ return true; };
+		} else {
+			this.visibleFunc = visibleFunc;
+		}
+	}
+
+	update() {
+		this.enabled = this.enabledFunc();
+		this.hidden = !this.visibleFunc();
 	}
 
 	scanNodes() {
@@ -128,11 +138,7 @@ class Form extends InterfaceElement {
 		this.#advanced = x;
 		for (const element of this.elements) {
 			if (element.advanced === true) {
-				if (this.advanced === true) {
-					element.hidden = false;
-				} else {
-					element.hidden = true;
-				}
+				element.update();
 			}
 		}
 	}
@@ -143,7 +149,9 @@ class Form extends InterfaceElement {
 		}
 	}
 
-	appendElement(elem) {
+	createElem(params) {
+		params.form = this;
+		let elem = new FormElement(params);
 		elem.mount(this.handle);
 		this.elements.push(elem);
 		this.rootNodes.push(...elem.rootNodes);
@@ -160,27 +168,27 @@ class Form extends InterfaceElement {
 		let labelTag = document.createTextNode(params.label);
 		params.tag.appendChild(labelTag);
 		params.label = undefined;
-		return this.appendElement(new FormElement(params));
+		return this.createElem(params);
 	}
 
 	createTextBox(params) {
 		params.tag = document.createElement("input");
 		dataTypeSupports(params, ["plaintext", "b64", "json-b64"]);
-		return this.appendElement(new FormElement(params));
+		return this.createElem(params);
 	}
 
 	createMediumTextBox(params) {
 		params.tag = document.createElement("textarea");
 		params.tag.classList.add("mediumbox")
 		dataTypeSupports(params, ["plaintext", "b64", "json-b64"]);
-		return this.appendElement(new FormElement(params));
+		return this.createElem(params);
 	}
 
 	createPasswordInput(params) {
 		params.tag = document.createElement("input");
 		params.tag.setAttribute("type", "password");
 		dataTypeSupports(params, ["plaintext"]);
-		return this.appendElement(new FormElement(params));
+		return this.createElem(params);
 	}
 
 	createNumberInput(params) {
@@ -191,7 +199,7 @@ class Form extends InterfaceElement {
 		if (params.minValue !== undefined) params.tag.min = params.minValue;
 		if (params.step !== undefined) params.tag.step = params.step;
 		if (params.required !== undefined) params.tag.required = params.required;
-		return this.appendElement(new FormElement(params));
+		return this.createElem(params);
 	}
 
 	createDropDown(params) {
@@ -221,13 +229,18 @@ class Form extends InterfaceElement {
 			optTag.appendChild(document.createTextNode(option.name));
 			params.tag.appendChild(optTag);
 		}
-		return this.appendElement(new FormElement(params));
+		params.tag.addEventListener("change", function() {
+			for (const elem of this.elements) {
+				elem.update();
+			}
+		}.bind(this));
+		return this.createElem(params);
 	}
 
 	createTextArea(params) {
 		params.tag = document.createElement("textarea");
 		dataTypeSupports(params, ["plaintext", "b64", "json-b64"]);
-		return this.appendElement(new FormElement(params));
+		return this.createElem(params);
 	}
 
 	createButton(params) {
@@ -237,7 +250,7 @@ class Form extends InterfaceElement {
 		params.tag.appendChild(params.labelTag);
 		params.fragment.appendChild(params.tag);
 		dataTypeSupports(params, ["none"]);
-		return this.appendElement(new FormElement(params));
+		return this.createElem(params);
 	}
 
 	createCheckBox(params) {
@@ -254,17 +267,17 @@ class Form extends InterfaceElement {
 		dataTypeSupports(params, ["bool"]);
 		params.tag.addEventListener("change", function() {
 			for (const elem of this.elements) {
-				elem.enabled = elem.enabledFunc();
+				elem.update();
 			}
 		}.bind(this));
-		return this.appendElement(new FormElement(params));
+		return this.createElem(params);
 	}
 
 	createOutput(params) {
 		params.tag = document.createElement("textarea");
 		params.tag.setAttribute("readonly", true);
 		dataTypeSupports(params, ["plaintext", "b64", "json-b64"]);
-		return this.appendElement(new FormElement(params));
+		return this.createElem(params);
 	}
 }
 
@@ -288,8 +301,36 @@ function bufToB64 (buf) {
 }
 
 class FormElement extends InterfaceElement {
-	constructor({tag, labelTag, label="", value, fragment, dataType, advanced=false, enabled=true, enabledFunc}) {
-		super({fragment, enabled, enabledFunc});
+	constructor({tag, fragment, advanced=false, form,
+		value, dataType,
+		labelTag, label="",
+		enabled=true, enabledFunc,
+		visibleFunc
+	}) {
+		let oriVisibleFunc = visibleFunc;
+
+		super({
+			fragment,
+			enabledFunc,
+			visibleFunc: function() {
+				let res;
+				if (oriVisibleFunc) {
+					res = oriVisibleFunc()
+				} else {
+					res = true;
+				}
+
+				if (form !== undefined) {
+					if (advanced) {
+						if (form.advanced) return res;
+						else return false;
+					}
+				}
+				return res;
+			}
+		});
+
+		this.form = form;
 
 		this.labelText = label;
 		if (labelTag === undefined) {
@@ -306,8 +347,6 @@ class FormElement extends InterfaceElement {
 		this.handle = tag;
 		this.dataType = dataType;
 		this.advanced = advanced;
-
-		if (this.advanced === true) this.hidden = true;
 
 		if (value !== undefined) this.value = value;
 	}
