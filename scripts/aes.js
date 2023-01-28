@@ -55,11 +55,25 @@ let encIV = encForm.createMediumTextBox({
 	label: "IV",
 	dataType: "b64",
 	advanced: true,
-	enabledFunc: function() {return encManualIV.value}
+	enabledFunc: function() {return encManualIV.value},
+	visibleFunc: function() {return ["AES-GCM", "AES-CBC"].includes(encMode.value)}
 });
 let encManualIV = encForm.createCheckBox({
 	label: "Use fixed IV instead of random",
-	advanced: true
+	advanced: true,
+	visibleFunc: function() {return ["AES-GCM", "AES-CBC"].includes(encMode.value)}
+});
+let encCounter = encForm.createMediumTextBox({
+	label: "Counter",
+	dataType: "b64",
+	advanced: true,
+	enabledFunc: function() {return encManualCounter.value},
+	visibleFunc: function() {return encMode.value === "AES-CTR"}
+});
+let encManualCounter = encForm.createCheckBox({
+	label: "Use fixed counter instead of random",
+	advanced: true,
+	visibleFunc: function() {return encMode.value === "AES-CTR"}
 });
 let encMode = encForm.createDropDown({
 	label: "AES mode",
@@ -72,6 +86,10 @@ let encMode = encForm.createDropDown({
 		{
 			name: "AES-CBC (Cipher Block Chaining)",
 			value: "AES-CBC"
+		},
+		{
+			name: "AES-CTR (Counter)",
+			value: "AES-CTR"
 		},
 	]
 });
@@ -159,6 +177,17 @@ async function aesCbcEnc(key, iv, msgEncoded) {
 		msgEncoded
 	);
 }
+async function aesCtrEnc(key, counter, msgEncoded) {
+	return window.crypto.subtle.encrypt(
+		{
+			"name": "AES-CTR",
+			"counter": counter,
+			"length": 64
+		},
+		key,
+		msgEncoded
+	);
+}
 
 encButton.handle.addEventListener("click", async function() {
 	let keyMaterial = await getKeyMaterial(encPass.value);
@@ -192,11 +221,23 @@ encButton.handle.addEventListener("click", async function() {
 	}
 
 	let iv;
-	if (encManualIV.value) {
-		iv = encIV.value;
-	} else {
-		iv = window.crypto.getRandomValues(new Uint8Array(16));
-		encIV.value = iv;
+	if (["AES-GCM", "AES-CBC"].includes(encMode.value)) {
+		if (encManualIV.value) {
+			iv = encIV.value;
+		} else {
+			iv = window.crypto.getRandomValues(new Uint8Array(16));
+			encIV.value = iv;
+		}
+	}
+
+	let counter;
+	if (encMode.value === "AES-CTR") {
+		if (encManualCounter.value) {
+			counter = encCounter.value;
+		} else {
+			counter = window.crypto.getRandomValues(new Uint8Array(16));
+			encCounter.value = counter;
+		}
 	}
 
 	let enc = new TextEncoder();
@@ -210,6 +251,9 @@ encButton.handle.addEventListener("click", async function() {
 		case "AES-CBC":
 			ciphertext = await aesCbcEnc(key, iv, msgEncoded);
 			break;
+		case "AES-CTR":
+			ciphertext = await aesCtrEnc(key, counter, msgEncoded);
+			break;
 		default:
 			let e = Error(`Mode '${encMode.value}' is not implemented.`);
 			encMode.handleError(e);
@@ -222,6 +266,7 @@ encButton.handle.addEventListener("click", async function() {
 		"ciphertext": bufToB64(ciphertext),
 		"salt": bufToB64(salt),
 		"iv": bufToB64(iv),
+		"counter": bufToB64(counter),
 		"encMode": encMode.value,
 		"pbkdf2Iters": pbkdf2Iters,
 	}
@@ -247,14 +292,26 @@ async function aesCbcDec(key, iv, ciphertext) {
 		ciphertext
 	);
 }
+async function aesCtrDec(key, counter, ciphertext) {
+	return window.crypto.subtle.decrypt(
+		{
+			"name": "AES-CTR",
+			"counter": counter,
+			"length": 64
+		},
+		key,
+		ciphertext
+	);
+}
 
 decButton.handle.addEventListener("click", async function() {
 	let msgEncoded = decMsg.value;
 
-	let ciphertext, iv, salt, encMode, pbkdf2Iters;
+	let ciphertext, iv, counter, salt, encMode, pbkdf2Iters;
 	try {
 		ciphertext = new b64ToBuf(msgEncoded.ciphertext);
 		iv = new Uint8Array(b64ToBuf(msgEncoded.iv));
+		counter = new Uint8Array(b64ToBuf(msgEncoded.counter));
 		salt = new Uint8Array(b64ToBuf(msgEncoded.salt));
 		encMode = msgEncoded.encMode;
 		pbkdf2Iters = msgEncoded.pbkdf2Iters;
@@ -302,6 +359,9 @@ decButton.handle.addEventListener("click", async function() {
 				break;
 			case "AES-CBC":
 				plaintext = await aesCbcDec(key, iv, ciphertext);
+				break;
+			case "AES-CTR":
+				plaintext = await aesCtrDec(key, counter, ciphertext);
 				break;
 			default:
 				throw Error(`Mode '${encMode.value}' is not implemented.`);
