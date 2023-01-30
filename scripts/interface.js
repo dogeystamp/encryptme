@@ -302,7 +302,7 @@ function bufToB64 (buf) {
 
 class FormElement extends InterfaceElement {
 	constructor({tag, fragment, advanced=false, form,
-		value, dataType,
+		value, dataType, placeholder,
 		labelTag, label="",
 		enabled=true, enabledFunc,
 		visibleFunc
@@ -349,6 +349,7 @@ class FormElement extends InterfaceElement {
 		this.advanced = advanced;
 
 		if (value !== undefined) this.value = value;
+		if (placeholder !== undefined) this.handle.placeholder = placeholder;
 	}
 
 	get value() {

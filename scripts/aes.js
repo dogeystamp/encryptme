@@ -16,9 +16,13 @@ let tabs = new TabList({});
 
 let encForm = tabs.createForm({label: "Encryption"});
 
-let encMsg = encForm.createTextArea({label: "Message"});
+let encMsg = encForm.createTextArea({
+	label: "Message",
+	placeholder: "Type a secret message",
+});
 let encPass = encForm.createPasswordInput({
 	label: "Password",
+	placeholder: "Enter your password",
 	enabledFunc: function() {return !encManualKey.value}
 });
 let encPbkdf2Iters = encForm.createNumberInput({
@@ -122,10 +126,12 @@ let decForm = tabs.createForm({label: "Decryption"});
 
 let decMsg = decForm.createTextArea({
 	label: "Encrypted message",
+	placeholder: "Paste the encrypted output",
 	dataType: "json-b64",
 });
 let decPass = decForm.createPasswordInput({
 	label: "Password",
+	placeholder: "Enter your password",
 	enabledFunc: function() {return !decManualKey.value}
 });
 let decKey = decForm.createMediumTextBox({
