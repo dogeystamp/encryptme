@@ -9,5 +9,5 @@ Currently, the following algorithms are implemented:
 
 * [AES encryption/decryption](https://dogeystamp.github.io/encryptme/aes.html)
 
-	This uses PBKDF2 to convert a password to a key, then uses 256-bit AES
+	This uses PBKDF2 to convert a password to a key, then uses AES
 	to encrypt a given message.

@@ -40,6 +40,20 @@ let encManualSalt = encForm.createCheckBox({
 	label: "Use fixed salt instead of random",
 	advanced: true
 });
+let encKeySize = encForm.createDropDown({
+	label: "AES key size",
+	advanced: true,
+	options: [
+		{
+			name: "128 bits",
+			value: 128
+		},
+		{
+			name: "256 bits",
+			value: "256"
+		},
+	]
+});
 let encKey = encForm.createMediumTextBox({
 	label: "Key",
 	dataType: "b64",
@@ -139,7 +153,7 @@ function getKeyMaterial(password) {
 	);
 }
 
-function getKey(keyMaterial, salt, pbkdf2Iters, encMode) {
+function getKey(keyMaterial, salt, pbkdf2Iters, encMode, keySize) {
 	return window.crypto.subtle.deriveKey(
 		{
 			"name": "PBKDF2",
@@ -150,7 +164,7 @@ function getKey(keyMaterial, salt, pbkdf2Iters, encMode) {
 		keyMaterial,
 		{
 			"name": encMode,
-			"length": 256
+			"length": keySize
 		},
 		true,
 		["encrypt", "decrypt"]
@@ -216,7 +230,7 @@ encButton.handle.addEventListener("click", async function() {
 			encSalt.value = salt;
 		}
 
-		key = await getKey(keyMaterial, salt, pbkdf2Iters, encMode.value);
+		key = await getKey(keyMaterial, salt, pbkdf2Iters, encMode.value, Number(encKeySize.value));
 		encKey.value = await window.crypto.subtle.exportKey("raw", key);
 	}
 
@@ -268,6 +282,7 @@ encButton.handle.addEventListener("click", async function() {
 		"iv": bufToB64(iv),
 		"counter": bufToB64(counter),
 		"encMode": encMode.value,
+		"encKeySize": encKeySize.value,
 		"pbkdf2Iters": pbkdf2Iters,
 	}
 });
@@ -307,13 +322,17 @@ async function aesCtrDec(key, counter, ciphertext) {
 decButton.handle.addEventListener("click", async function() {
 	let msgEncoded = decMsg.value;
 
-	let ciphertext, iv, counter, salt, encMode, pbkdf2Iters;
+	let ciphertext, iv, counter, salt, encMode, pbkdf2Iters, encKeySize;
 	try {
 		ciphertext = new b64ToBuf(msgEncoded.ciphertext);
 		iv = new Uint8Array(b64ToBuf(msgEncoded.iv));
 		counter = new Uint8Array(b64ToBuf(msgEncoded.counter));
 		salt = new Uint8Array(b64ToBuf(msgEncoded.salt));
 		encMode = msgEncoded.encMode;
+		encKeySize = msgEncoded.encKeySize;
+		if (!["128", "256"].includes(encKeySize)) {
+			throw Error(`Invalid AES key size: '${encKeySize}'`);
+		}
 		pbkdf2Iters = msgEncoded.pbkdf2Iters;
 		if (pbkdf2Iters < 1 || pbkdf2Iters%1 !== 0) {
 			throw Error(`Invalid PBKDF2 iterations setting: ${pbkdf2Iters}`);
@@ -347,7 +366,8 @@ decButton.handle.addEventListener("click", async function() {
 			decMsg.handleError(e);
 		}
 	} else {
-		key = await getKey(keyMaterial, salt, pbkdf2Iters, encMode);
+		key = await getKey(keyMaterial, salt, pbkdf2Iters, encMode, Number(encKeySize));
+		decKey.value = await window.crypto.subtle.exportKey("raw", key);
 	}
 
 	let plaintext;
