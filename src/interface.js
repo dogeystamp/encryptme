@@ -12,6 +12,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 */
 
+import { b64ToBuf, bufToB64 } from "./util.js";
+
 class InterfaceElement {
 	rootNodes = [];
 
@@ -105,7 +107,7 @@ class Form extends InterfaceElement {
 		}
 
 		let advancedToggle = this.createCheckBox({label: "Advanced settings"});
-		advancedToggle.handle.addEventListener('change', function() {
+		advancedToggle.handle.addEventListener("change", function() {
 			this.advanced = advancedToggle.value;
 		}.bind(this));
 
@@ -179,7 +181,7 @@ class Form extends InterfaceElement {
 
 	createMediumTextBox(params) {
 		params.tag = document.createElement("textarea");
-		params.tag.classList.add("mediumbox")
+		params.tag.classList.add("mediumbox");
 		dataTypeSupports(params, ["plaintext", "b64", "json-b64"]);
 		return this.createElem(params);
 	}
@@ -281,30 +283,11 @@ class Form extends InterfaceElement {
 	}
 }
 
-function b64ToBuf (b64) {
-	let ascii = atob(b64);
-	let buf = new ArrayBuffer(ascii.length);
-	let bytes = new Uint8Array(buf);
-	for (var i = 0; i < ascii.length; i++) {
-		bytes[i] = ascii.charCodeAt(i);
-	}
-	return buf;
-}
-
-function bufToB64 (buf) {
-	let bytes = new Uint8Array(buf);
-	let ascii = '';
-	for (var i = 0; i < bytes.byteLength; i++) {
-		ascii += String.fromCharCode(bytes[i]);
-	}
-	return btoa(ascii);
-}
-
 class FormElement extends InterfaceElement {
 	constructor({tag, fragment, advanced=false, form,
 		value, dataType, placeholder,
 		labelTag, label="",
-		enabled=true, enabledFunc,
+		enabledFunc,
 		visibleFunc
 	}) {
 		let oriVisibleFunc = visibleFunc;
@@ -315,7 +298,7 @@ class FormElement extends InterfaceElement {
 			visibleFunc: function() {
 				let res;
 				if (oriVisibleFunc) {
-					res = oriVisibleFunc()
+					res = oriVisibleFunc();
 				} else {
 					res = true;
 				}
@@ -355,61 +338,62 @@ class FormElement extends InterfaceElement {
 	get value() {
 		this.clearAlerts();
 		switch (this.dataType) {
-			case "number":
-				if (this.handle.checkValidity() == false) {
-					this.alertBox("alert-error", this.handle.validationMessage);
-					return undefined;
-				}
-				return Number(this.handle.value);
-			case "plaintext":
-				return this.handle.value;
-			case "b64":
-				try {
-					return b64ToBuf(this.handle.value);
-				} catch (e) {
-					this.alertBox("alert-error", "Invalid base64 value.");
-					return;
-				}
-			case "json-b64":
-				let jsonString;
-				try {
-					jsonString = atob(this.handle.value);
-				} catch (e) {
-					this.alertBox("alert-error", "Invalid base64 value.");
-					return;
-				}
-				try {
-					return JSON.parse(jsonString);
-				} catch (e) {
-					this.alertBox("alert-error", "Invalid JSON encoding.");
-					return;
-				}
-			case "bool":
-				return this.handle.checked;
-			case "category":
-				return this.handle.value;
-			case "none":
+		case "number":
+			if (this.handle.checkValidity() == false) {
+				this.alertBox("alert-error", this.handle.validationMessage);
 				return undefined;
+			}
+			return Number(this.handle.value);
+		case "plaintext":
+			return this.handle.value;
+		case "b64":
+			try {
+				return b64ToBuf(this.handle.value);
+			} catch (e) {
+				this.handleError(Error("Invalid base64 value."));
+				return undefined;
+			}
+		case "json-b64": {
+			let jsonString;
+			try {
+				jsonString = atob(this.handle.value);
+			} catch (e) {
+				this.handleError(Error("Invalid base64 value."));
+				return undefined;
+			}
+			try {
+				return JSON.parse(jsonString);
+			} catch (e) {
+				this.handleError(Error("Invalid JSON encoding."));
+				return undefined;
+			}
+		}
+		case "bool":
+			return this.handle.checked;
+		case "category":
+			return this.handle.value;
+		default:
+			return undefined;
 		}
 	}
 	set value(x) {
 		switch (this.dataType) {
-			case "number":
-			case "plaintext":
-				this.handle.value = x;
-				break;
-			case "b64":
-				this.handle.value = bufToB64(x);
-				break;
-			case "json-b64":
-				this.handle.value = btoa(JSON.stringify(x));
-				break;
-			case "bool":
-				this.handle.checked = x;
-				break;
-			case "category":
-				this.handle.value = x;
-				break;
+		case "number":
+		case "plaintext":
+			this.handle.value = x;
+			break;
+		case "b64":
+			this.handle.value = bufToB64(x);
+			break;
+		case "json-b64":
+			this.handle.value = btoa(JSON.stringify(x));
+			break;
+		case "bool":
+			this.handle.checked = x;
+			break;
+		case "category":
+			this.handle.value = x;
+			break;
 		}
 	}
 
@@ -418,24 +402,24 @@ class FormElement extends InterfaceElement {
 		// type is alert-error or alert-info
 		
 		if (this.handle === undefined) {
-			throw `can not add alert: still undefined`;
+			throw "can not add alert: still undefined";
 		}
 
 		if (this.hidden === true) {
-			throw `can not add alert: hidden`;
+			throw "can not add alert: hidden";
 		}
 
 		if (title === undefined) {
 			switch (type) {
-				case "alert-info":
-					title = "Info: ";
-					break;
-				case "alert-error":
-					title = "Error: ";
-					break;
-				default:
-					title = "";
-					break;
+			case "alert-info":
+				title = "Info: ";
+				break;
+			case "alert-error":
+				title = "Error: ";
+				break;
+			default:
+				title = "";
+				break;
 			}
 		}
 
@@ -483,7 +467,7 @@ class Tab extends InterfaceElement {
 
 class TabList extends InterfaceElement {
 	constructor({tag, par=document.body}) {
-		super({})
+		super({});
 
 		this.par = par;
 
@@ -497,7 +481,7 @@ class TabList extends InterfaceElement {
 		par.appendChild(this.fragment);
 	}
 
-	tabs = []
+	tabs = [];
 
 	#activeForm;
 	set activeForm(x) {
@@ -527,7 +511,7 @@ class TabList extends InterfaceElement {
 		});
 		this.tabs.push(tab);
 
-		tab.handle.addEventListener('click', function() {
+		tab.handle.addEventListener("click", function() {
 			this.activeForm = form;
 		}.bind(this));
 
@@ -539,3 +523,5 @@ class TabList extends InterfaceElement {
 		return form;
 	}
 }
+
+export { TabList, FormElement, Form };

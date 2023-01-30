@@ -12,6 +12,13 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 */
 
+import { generateHeader } from "./templates.js";
+import "./style.css";
+generateHeader();
+
+import { TabList } from "./interface.js";
+import { bufToB64, b64ToBuf } from "./util.js";
+
 let tabs = new TabList({});
 
 let encForm = tabs.createForm({label: "Encryption"});
@@ -23,7 +30,7 @@ let encMsg = encForm.createTextArea({
 let encPass = encForm.createPasswordInput({
 	label: "Password",
 	placeholder: "Enter your password",
-	enabledFunc: function() {return !encManualKey.value}
+	enabledFunc: function() {return !encManualKey.value;}
 });
 let encPbkdf2Iters = encForm.createNumberInput({
 	label: "PBKDF2 iterations",
@@ -31,14 +38,14 @@ let encPbkdf2Iters = encForm.createNumberInput({
 	step: 1,
 	value: 300000,
 	advanced: true,
-	enabledFunc: function() {return !encManualKey.value}
+	enabledFunc: function() {return !encManualKey.value;}
 });
 let encSalt = encForm.createMediumTextBox({
 	label: "PBKDF2 salt",
 	dataType: "b64",
 	advanced: true,
 	enabled: false,
-	enabledFunc: function() {return encManualSalt.value && !encManualKey.value}
+	enabledFunc: function() {return encManualSalt.value && !encManualKey.value;}
 });
 let encManualSalt = encForm.createCheckBox({
 	label: "Use fixed salt instead of random",
@@ -63,7 +70,7 @@ let encKey = encForm.createMediumTextBox({
 	dataType: "b64",
 	advanced: true,
 	enabled: false,
-	enabledFunc: function() {return encManualKey.value}
+	enabledFunc: function() {return encManualKey.value;}
 });
 let encManualKey = encForm.createCheckBox({
 	label: "Use fixed key instead of password",
@@ -73,25 +80,25 @@ let encIV = encForm.createMediumTextBox({
 	label: "IV",
 	dataType: "b64",
 	advanced: true,
-	enabledFunc: function() {return encManualIV.value},
-	visibleFunc: function() {return ["AES-GCM", "AES-CBC"].includes(encMode.value)}
+	enabledFunc: function() {return encManualIV.value;},
+	visibleFunc: function() {return ["AES-GCM", "AES-CBC"].includes(encMode.value);}
 });
 let encManualIV = encForm.createCheckBox({
 	label: "Use fixed IV instead of random",
 	advanced: true,
-	visibleFunc: function() {return ["AES-GCM", "AES-CBC"].includes(encMode.value)}
+	visibleFunc: function() {return ["AES-GCM", "AES-CBC"].includes(encMode.value);}
 });
 let encCounter = encForm.createMediumTextBox({
 	label: "Counter",
 	dataType: "b64",
 	advanced: true,
-	enabledFunc: function() {return encManualCounter.value},
-	visibleFunc: function() {return encMode.value === "AES-CTR"}
+	enabledFunc: function() {return encManualCounter.value;},
+	visibleFunc: function() {return encMode.value === "AES-CTR";}
 });
 let encManualCounter = encForm.createCheckBox({
 	label: "Use fixed counter instead of random",
 	advanced: true,
-	visibleFunc: function() {return encMode.value === "AES-CTR"}
+	visibleFunc: function() {return encMode.value === "AES-CTR";}
 });
 let encMode = encForm.createDropDown({
 	label: "AES mode",
@@ -132,14 +139,14 @@ let decMsg = decForm.createTextArea({
 let decPass = decForm.createPasswordInput({
 	label: "Password",
 	placeholder: "Enter your password",
-	enabledFunc: function() {return !decManualKey.value}
+	enabledFunc: function() {return !decManualKey.value;}
 });
 let decKey = decForm.createMediumTextBox({
 	label: "Key",
 	dataType: "b64",
 	advanced: true,
 	enabled: false,
-	enabledFunc: function() {return decManualKey.value}
+	enabledFunc: function() {return decManualKey.value;}
 });
 let decManualKey = decForm.createCheckBox({
 	label: "Use fixed key instead of password",
@@ -265,19 +272,18 @@ encButton.handle.addEventListener("click", async function() {
 
 	let ciphertext; 
 	switch (encMode.value) {
-		case "AES-GCM":
-			ciphertext = await aesGcmEnc(key, iv, msgEncoded);
-			break;
-		case "AES-CBC":
-			ciphertext = await aesCbcEnc(key, iv, msgEncoded);
-			break;
-		case "AES-CTR":
-			ciphertext = await aesCtrEnc(key, counter, msgEncoded);
-			break;
-		default:
-			let e = Error(`Mode '${encMode.value}' is not implemented.`);
-			encMode.handleError(e);
-			return;
+	case "AES-GCM":
+		ciphertext = await aesGcmEnc(key, iv, msgEncoded);
+		break;
+	case "AES-CBC":
+		ciphertext = await aesCbcEnc(key, iv, msgEncoded);
+		break;
+	case "AES-CTR":
+		ciphertext = await aesCtrEnc(key, counter, msgEncoded);
+		break;
+	default:
+		encMode.handleError(Error(`Mode '${encMode.value}' is not implemented.`));
+		return;
 	}
 
 	encOutRaw.value = ciphertext;
@@ -290,7 +296,7 @@ encButton.handle.addEventListener("click", async function() {
 		"encMode": encMode.value,
 		"encKeySize": encKeySize.value,
 		"pbkdf2Iters": pbkdf2Iters,
-	}
+	};
 });
 
 async function aesGcmDec(key, iv, ciphertext) {
@@ -380,18 +386,18 @@ decButton.handle.addEventListener("click", async function() {
 
 	try {
 		switch (encMode) {
-			case "AES-GCM":
-				plaintext = await aesGcmDec(key, iv, ciphertext);
-				break;
-			case "AES-CBC":
-				plaintext = await aesCbcDec(key, iv, ciphertext);
-				break;
-			case "AES-CTR":
-				plaintext = await aesCtrDec(key, counter, ciphertext);
-				break;
-			default:
-				throw Error(`Mode '${encMode.value}' is not implemented.`);
-	}
+		case "AES-GCM":
+			plaintext = await aesGcmDec(key, iv, ciphertext);
+			break;
+		case "AES-CBC":
+			plaintext = await aesCbcDec(key, iv, ciphertext);
+			break;
+		case "AES-CTR":
+			plaintext = await aesCtrDec(key, counter, ciphertext);
+			break;
+		default:
+			throw Error(`Mode '${encMode.value}' is not implemented.`);
+		}
 	} catch (e) {
 		if (e.message !== ""  && e.message !== undefined) {
 			decMsg.handleError(e, "Error during decryption.");
