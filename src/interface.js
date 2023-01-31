@@ -97,7 +97,7 @@ function dataTypeSupports(params, validTypes) {
 }
 
 class Form extends InterfaceElement {
-	constructor({tag, par=document.body, label}) {
+	constructor({tag, par=document.body, label, mounted=false}) {
 		super({});
 
 		if (tag === undefined) {
@@ -121,7 +121,9 @@ class Form extends InterfaceElement {
 			this.advanced = advancedToggle.value;
 		}.bind(this));
 
-		par.appendChild(this.fragment);
+		if (mounted) {
+			this.mount(par);
+		}
 	}
 
 	#hidden = false;
@@ -488,7 +490,8 @@ class TabList extends InterfaceElement {
 			this.handle = tag;
 		}
 		this.fragment.appendChild(this.handle);
-		par.appendChild(this.fragment);
+
+		this.mount(par);
 	}
 
 	tabs = [];
@@ -531,6 +534,12 @@ class TabList extends InterfaceElement {
 		else form.hidden = true;
 
 		return form;
+	}
+
+	mountForms() {
+		for (const tab of this.tabs) {
+			tab.form.mount(this.par);
+		}
 	}
 }
 

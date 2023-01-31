@@ -155,6 +155,8 @@ let decManualKey = decForm.createCheckBox({
 let decButton = decForm.createButton({label: "Decrypt"});
 let decOut = decForm.createOutput({label: "Output"});
 
+tabs.mountForms();
+
 function getKeyMaterial(password) {
 	let enc = new TextEncoder();
 	return window.crypto.subtle.importKey(
