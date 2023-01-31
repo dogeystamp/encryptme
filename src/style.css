@@ -4,11 +4,7 @@ body {
 	padding: 0 10px;
 	color: #444444;
 	background: #eeeeee;
-	animation: fadeIn 0.5s;
-}
-@keyframes fadeIn {
-	0% {opacity: 0;}
-	100% {opacity: 1;}
+	transition: all 0.5s;
 }
 
 body, button {
@@ -160,24 +156,9 @@ button:active {
 	}
 }
 
-[hidden] {
-	animation: fadeOut 0.2s, disappear 0.3s;
+.visualhidden {
 	opacity: 0;
-	visibility: hidden;
-	max-height: 0 !important;
-	margin: 0 !important;
-	padding: 0 !important;
 }
-@keyframes fadeOut {
-	0% {opacity: 1; visibility: visible;}
-	100% {opacity: 0; visibility: hidden;}
-}
-@keyframes disappear {
-	0% {
-		max-height: 100em;
-	}
-	100% {
-		max-height: 0;
-		margin: 0;
-	}
+.hidden {
+	display: none;
 }

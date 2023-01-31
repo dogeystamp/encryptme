@@ -58,10 +58,20 @@ class InterfaceElement {
 		return this.#hidden;
 	}
 	set hidden(x) {
+		if (this.#hidden === x) return;
+
 		this.#hidden = x;
 
 		for (const node of this.rootNodes) {
-			node.hidden = this.hidden;
+			if (this.hidden) {
+				node.classList.add("visualhidden");
+				node.classList.add("hidden");
+			} else {
+				node.classList.remove("hidden");
+				setTimeout(function() {
+					node.classList.remove("visualhidden");
+				}, 20);
+			}
 		}
 
 		if (this.hidden === true) this.clearAlerts();
