@@ -2,11 +2,20 @@ const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
-const pages = ["index", "aes"];
+const pages = [
+	{
+		id: "index",
+		desc: "Easy to use and simple online tools for encryption and decryption.",
+	},
+	{
+		id: "aes",
+		desc: "Secure and simple tool for AES, with control over all advanced options like key size, salt, AES mode, and others.",
+	},
+];
 
 module.exports = {
 	entry: pages.reduce((config, page) => {
-		config[page] = `./src/${page}.js`;
+		config[page.id] = `./src/${page.id}.js`;
 		return config;
 	}, {}),
 	output: {
@@ -28,10 +37,15 @@ module.exports = {
 		pages.map(
 			(page) =>
 				new HtmlWebpackPlugin({
-					inject: true,
-					template: `./src/pages/${page}.html`,
-					filename: `${page}.html`,
-					chunks: [page],
+					inject: "body",
+					title: `encryptme: ${page.title}`,
+					meta: {
+						viewport: "width=device-width, initial-scale=1, shrink-to-fit=no",
+						description: page.desc
+					},
+					filename: `${page.id}.html`,
+					template: `./src/pages/${page.id}.html`,
+					chunks: [page.id],
 				})
 		)
 	),
