@@ -11,3 +11,31 @@ Currently, the following algorithms are implemented:
 
 	This uses PBKDF2 to convert a password to a key, then uses AES
 	to encrypt a given message.
+
+## Installation
+
+Clone the repo:
+
+```
+git clone https://github.com/dogeystamp/encryptme
+```
+
+Install packages:
+
+```
+npm install
+```
+
+## Running
+
+Start development server:
+	
+```
+npm run start
+```
+
+Or, compile to `dist/`:
+
+```
+npm run build
+```
